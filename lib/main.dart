@@ -16,10 +16,10 @@ class MyApp extends StatelessWidget {
         body: Row(
           children: [
             // Constrain the width of ChatPage using Expanded or Flexible
-            // Expanded(
-            //   flex: 3, // Adjust flex as needed to control width
-            //   child: ChatPage(),
-            // ),
+            Expanded(
+              flex: 3, // Adjust flex as needed to control width
+              child: ChatPage(),
+            ),
 
             // Constrain the width of Sidebar using a fixed width or flex
             SizedBox(
