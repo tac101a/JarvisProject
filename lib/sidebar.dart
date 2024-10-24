@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
 
-class Sidebar extends StatelessWidget {
-  const Sidebar({super.key});
+class Sidebar extends StatefulWidget {
+  final Function(int) onIconTap;
+
+  const Sidebar({super.key, required this.onIconTap});
+
+  @override
+  State<Sidebar> createState() => _SidebarState();
+}
+
+class _SidebarState extends State<Sidebar> {
+  int _selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -47,12 +56,12 @@ class Sidebar extends StatelessWidget {
                   ),
                 ),
                 // Main icons
-                _buildIcon(Icons.chat_bubble, 'Chat', Colors.blue),
-                _buildIcon(Icons.book, 'Read', Colors.grey),
-                _buildIcon(Icons.search, 'Search', Colors.grey),
-                _buildIcon(Icons.create, 'Write', Colors.grey),
-                _buildIcon(Icons.translate, 'Translate', Colors.grey),
-                _buildIcon(Icons.palette, 'Art', Colors.grey),
+                _buildIcon(0, Icons.chat_bubble, 'Chat'),
+                _buildIcon(1, Icons.book, 'Read'),
+                _buildIcon(2, Icons.search, 'Search'),
+                _buildIcon(3, Icons.create, 'Write'),
+                _buildIcon(4, Icons.translate, 'Translate'),
+                _buildIcon(5, Icons.palette, 'Art'),
               ],
             ),
             Padding(
@@ -86,16 +95,21 @@ class Sidebar extends StatelessWidget {
     );
   }
 
-  Widget _buildIcon(IconData icon, String label, Color color) {
+  Widget _buildIcon(int index, IconData icon, String label) {
     return GestureDetector(
       onTap: () {
-        // Handle icon press
+        setState(() {
+          _selectedIndex = index;
+        });
+        widget.onIconTap(index); // notify to parent on icon tap
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Column(
           children: [
-            Icon(icon, color: color, size: 22),
+            Icon(icon,
+                color: _selectedIndex == index ? Colors.blue : Colors.grey,
+                size: 22),
             if (label.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 5),
@@ -104,7 +118,7 @@ class Sidebar extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
-                    color: color,
+                    color: _selectedIndex == index ? Colors.blue : Colors.grey,
                   ),
                 ),
               ),
