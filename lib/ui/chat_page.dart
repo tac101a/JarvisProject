@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class ChatPage extends StatelessWidget {
   const ChatPage({super.key});
@@ -24,24 +25,24 @@ class ChatPage extends StatelessWidget {
                     ],
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildHeader(), // Header (Hi, good afternoon)
-                      const SizedBox(height: 12),
-                      _buildTopRow(), // GPT-3.5 Turbo row
-                      const SizedBox(height: 12),
-                      _buildInputField(), // Input Field
-                      const SizedBox(height: 12),
-                      _buildToolsRow(), // Tool row
-                      const SizedBox(height: 12),
-                      _buildBottomRow(), // Bottom row
-                    ],
+                  // Wrapping the Column in a SingleChildScrollView
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHeader(), // Header (Hi, good afternoon)
+                        const SizedBox(height: 12),
+                        _buildTopRow(), // GPT-3.5 Turbo row
+                        const SizedBox(height: 12),
+                        _buildInputField(), // Input Field
+                        const SizedBox(height: 12),
+                        _buildBottomRow(context), // Bottom row
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-            // Sidebar will be another part, already implemented in your project
           ],
         ),
       ),
@@ -169,67 +170,113 @@ class ChatPage extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         decoration: BoxDecoration(
           color: const Color(0xFFF1F5F9),
           borderRadius: BorderRadius.circular(16),
         ),
-        child: const Text(
-          "Ask me anything, press ‘/’ for prompts...",
-          style: TextStyle(
-            fontFamily: 'Inter',
-            fontWeight: FontWeight.w400,
-            fontSize: 14,
-            color: Color(0xFF94A3B8),
-          ),
+        child: Column(
+          mainAxisSize:
+              MainAxisSize.min, // Ensure the column takes minimal space
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Ask me anything text
+            const Text(
+              "Ask me anything, press ‘/’ for prompts...",
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w400,
+                fontSize: 14,
+                color: Color(0xFF94A3B8),
+              ),
+            ),
+            const SizedBox(height: 8), // Space between text and icons
+
+            // Row of icons
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Left-aligned icons
+                Row(
+                  children: [
+                    _buildIcon(Icons.auto_awesome),
+                    const SizedBox(width: 8),
+                    _buildIcon(Icons.alternate_email),
+                    const SizedBox(width: 8),
+                    _buildIcon(Icons.mic),
+                    const SizedBox(width: 8),
+                    _buildToolIcon(Icons.add, "Add Tools"),
+                  ],
+                ),
+                // Right-aligned send icon
+                _buildIcon(Icons.send),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildToolsRow() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              _buildToolIcon(Icons.add, "Add Tools"),
-              const SizedBox(width: 8),
-              _buildIcon(Icons.mic),
-              const SizedBox(width: 8),
-              _buildIcon(Icons.alternate_email),
-            ],
-          ),
-          const Spacer(),
-          _buildIcon(Icons.send),
-        ],
-      ),
-    );
-  }
+  // Widget _buildToolsRow() {
+  //   return Padding(
+  //     padding: const EdgeInsets.symmetric(horizontal: 14),
+  //     child: Container(
+  //       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+  //       decoration: BoxDecoration(
+  //         color: const Color(0xFFF1F5F9),
+  //         borderRadius: BorderRadius.circular(16),
+  //       ),
+  //       child: Row(
+  //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //         children: [
+  //           // Left-aligned icons inside the input field
+  //           Row(
+  //             children: [
+  //               _buildIcon(
+  //                   Icons.auto_awesome), // custom icon on left (as per image)
+  //               const SizedBox(width: 8),
+  //               _buildIcon(Icons.alternate_email), // @ icon
+  //               const SizedBox(width: 8),
+  //               _buildIcon(Icons.mic), // microphone icon
+  //               const SizedBox(width: 8),
+  //               _buildToolIcon(Icons.add, "+ Add Tools"), // Add Tools icon
+  //             ],
+  //           ),
+  //           // Right-aligned send icon
+  //           _buildIcon(Icons.send),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
-  Widget _buildBottomRow() {
+  Widget _buildBottomRow(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           _buildSmallButton('30', Icons.water_drop_outlined),
-          Row(
-            children: [
-              const Text(
-                "Upgrade",
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
-                  color: Color(0xFF0078D4),
+          GestureDetector(
+            onTap: () {
+              context.go('/pricing'); // Navigate to PricingScreen
+            },
+            child: Row(
+              children: [
+                const Text(
+                  "Upgrade",
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                    color: Color(0xFF0078D4),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 4),
-              _buildIcon(Icons.rocket_launch_sharp),
-            ],
+                const SizedBox(width: 4),
+                _buildIcon(Icons.rocket_launch_sharp),
+              ],
+            ),
           ),
           Row(
             children: [
