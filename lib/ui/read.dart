@@ -15,25 +15,15 @@ class ReadPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Section: URL input and button
             _buildTopSection(),
-
             const SizedBox(height: 20),
-
-            // Read PDF and Handy Tool Section
             _buildToolsSection(),
-
             const SizedBox(height: 20),
-
-            // Recent Memos
             const Text(
               'Recent memos',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-
             const SizedBox(height: 16),
-
-            // Memo Card
             _buildMemoCard(),
           ],
         ),
@@ -41,7 +31,6 @@ class ReadPage extends StatelessWidget {
     );
   }
 
-  // Top section with input and button
   Widget _buildTopSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -60,12 +49,18 @@ class ReadPage extends StatelessWidget {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
               ),
             ),
             const SizedBox(width: 8),
             ElevatedButton(
               onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
               child: const Text('Read this page'),
             ),
           ],
@@ -74,7 +69,6 @@ class ReadPage extends StatelessWidget {
     );
   }
 
-  // Read PDF and Handy Tool section
   Widget _buildToolsSection() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -92,7 +86,6 @@ class ReadPage extends StatelessWidget {
     );
   }
 
-  // Tool card for PDF Upload and Screenshot Tool
   Widget _buildToolCard(
       {required IconData icon, required String label, String? subtitle}) {
     return Expanded(
@@ -123,7 +116,6 @@ class ReadPage extends StatelessWidget {
     );
   }
 
-  // Recent Memo Card
   Widget _buildMemoCard() {
     return Card(
       elevation: 4,
@@ -137,10 +129,10 @@ class ReadPage extends StatelessWidget {
           children: [
             const Icon(Icons.book, size: 48, color: Colors.purple),
             const SizedBox(width: 16),
-            Expanded(
+            const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Text(
                     'Computer Science',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -163,7 +155,7 @@ class ReadPage extends StatelessWidget {
             const SizedBox(width: 16),
             ClipOval(
               child: Image.asset(
-                'assets/avatar.jpg', // Placeholder image
+                'lib/assets/avatar.jpg', // Placeholder image
                 width: 48,
                 height: 48,
                 fit: BoxFit.cover,

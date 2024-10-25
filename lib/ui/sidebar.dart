@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart'; // Import GoRouter package
 
 class Sidebar extends StatefulWidget {
   final Function(int) onIconTap;
@@ -39,19 +40,15 @@ class _SidebarState extends State<Sidebar> {
           children: [
             Column(
               children: [
-                // Top Buttons with Chevrons
+                // Chevron buttons
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10.0),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildChevronButton(Icons.chevron_left, () {
-                        // Handle Chevron Left Press
-                      }),
+                      _buildChevronButton(Icons.chevron_left),
                       const SizedBox(width: 8),
-                      _buildChevronButton(Icons.chevron_right, () {
-                        // Handle Chevron Right Press
-                      }),
+                      _buildChevronButton(Icons.chevron_right),
                     ],
                   ),
                 ),
@@ -65,27 +62,26 @@ class _SidebarState extends State<Sidebar> {
               ],
             ),
             Padding(
-              padding: const EdgeInsets.only(bottom: 20.0),
+              padding: const EdgeInsets.only(bottom: 20),
               child: Column(
                 children: [
-                  // Three additional icons above avatar
-                  _buildExtraIcon(Icons.desktop_windows, () {
-                    // Handle Desktop Icon Press
-                  }),
+                  // Additional icons above avatar
+                  _buildExtraIcon(Icons.desktop_windows),
                   const SizedBox(height: 8),
-                  _buildExtraIcon(Icons.question_mark, () {
-                    // Handle Help Icon Press
-                  }),
+                  _buildExtraIcon(Icons.question_mark),
                   const SizedBox(height: 8),
-                  _buildExtraIcon(Icons.settings, () {
-                    // Handle Settings Icon Press
-                  }),
+                  _buildExtraIcon(Icons.settings),
                   const SizedBox(height: 16),
-                  const CircleAvatar(
-                    radius: 13,
-                    backgroundImage: AssetImage('assets/avatar.jpg'),
+                  GestureDetector(
+                    onTap: () {
+                      context.go('/login'); // Navigate to AuthScreen for login
+                    },
+                    child: const CircleAvatar(
+                      radius: 13,
+                      backgroundImage: AssetImage('lib/assets/avatar.jpg'),
+                    ),
                   ),
-                  const SizedBox(height: 10), // Space between avatar and bottom
+                  const SizedBox(height: 10),
                 ],
               ),
             ),
@@ -96,41 +92,44 @@ class _SidebarState extends State<Sidebar> {
   }
 
   Widget _buildIcon(int index, IconData icon, String label) {
+    final bool isSelected = _selectedIndex == index;
+
     return GestureDetector(
       onTap: () {
-        setState(() {
-          _selectedIndex = index;
-        });
-        widget.onIconTap(index); // notify to parent on icon tap
+        setState(() => _selectedIndex = index);
+        widget.onIconTap(index);
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Column(
           children: [
-            Icon(icon,
-                color: _selectedIndex == index ? Colors.blue : Colors.grey,
-                size: 22),
-            if (label.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 5),
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: _selectedIndex == index ? Colors.blue : Colors.grey,
-                  ),
+            Icon(
+              icon,
+              color: isSelected ? Colors.blue : Colors.grey,
+              size: 22,
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 5),
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: isSelected ? Colors.blue : Colors.grey,
                 ),
               ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildChevronButton(IconData icon, VoidCallback onPressed) {
+  Widget _buildChevronButton(IconData icon) {
     return GestureDetector(
-      onTap: onPressed,
+      onTap: () {
+        // Handle chevron button press
+      },
       child: Container(
         width: 16,
         height: 16,
@@ -149,9 +148,11 @@ class _SidebarState extends State<Sidebar> {
     );
   }
 
-  Widget _buildExtraIcon(IconData icon, VoidCallback onPressed) {
+  Widget _buildExtraIcon(IconData icon) {
     return GestureDetector(
-      onTap: onPressed,
+      onTap: () {
+        // Handle extra icon press
+      },
       child: Container(
         width: 32,
         height: 32,
