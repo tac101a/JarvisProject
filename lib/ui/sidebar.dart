@@ -74,7 +74,8 @@ class _SidebarState extends State<Sidebar> {
                   const SizedBox(height: 16),
                   GestureDetector(
                     onTap: () {
-                      context.go('/login'); // Navigate to AuthScreen for login
+                      showOverlay(
+                          context); // context.go('/login'); // Navigate to AuthScreen for login
                     },
                     child: const CircleAvatar(
                       radius: 13,
@@ -123,6 +124,105 @@ class _SidebarState extends State<Sidebar> {
         ),
       ),
     );
+  }
+
+  void showOverlay(BuildContext context) {
+    final overlay = Overlay.of(context);
+    late OverlayEntry overlayEntry;
+
+    void removeOverlay() {
+      overlayEntry.remove();
+    }
+
+    overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+          bottom: 50.0,
+          right: 20.0,
+          child: GestureDetector(
+            onTap: () {
+              overlayEntry.remove();
+            },
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16.0),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10.0,
+                            spreadRadius: 2.0)
+                      ]),
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          CircleAvatar(
+                              radius: 20,
+                              backgroundImage:
+                                  AssetImage('lib/assets/avatar.jpg')),
+                          SizedBox(width: 8),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "AI Jarvis",
+                                style: TextStyle(fontSize: 16),
+                              ),
+                              Text(
+                                "myjarvischat@gmail.com",
+                                style: TextStyle(color: Colors.grey),
+                              )
+                            ],
+                          )
+                        ],
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          // Xử lý khi nhấn vào "Account & Billing"
+                        },
+                        child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: GestureDetector(
+                              onTap: () {
+                                removeOverlay();
+                                context.go('/account');
+                              },
+                              child: const Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text("Account & Billing"),
+                                  Icon(Icons.chevron_right),
+                                ],
+                              ),
+                            )),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          // Xử lý khi nhấn vào "Account & Billing"
+                        },
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text("Sign Out",
+                                  style: TextStyle(color: Colors.red)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  )),
+            ),
+          )),
+    );
+
+    overlay.insert(overlayEntry); // Thêm overlay vào màn hình
   }
 
   Widget _buildChevronButton(IconData icon) {

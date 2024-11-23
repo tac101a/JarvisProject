@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:jarvis_project/ui/account_page.dart';
 import 'package:jarvis_project/util/home.dart';
 import 'package:jarvis_project/ui/auth_screen.dart';
 import 'package:jarvis_project/ui/pricing_screen.dart';
@@ -25,6 +26,11 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/pricing',
       builder: (context, state) => const PricingScreen(),
+    ),
+
+    GoRoute(
+      path: '/account',
+      builder: (context, state) => const AccountPage(),
     ),
   ],
 );

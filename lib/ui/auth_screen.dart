@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:jarvis_project/style/styles.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -16,6 +18,44 @@ class _AuthScreenState extends State<AuthScreen> {
     bool isLogin =
         GoRouter.of(context).routeInformationProvider.value.uri.toString() ==
             '/login';
+
+    final TextEditingController emailController = TextEditingController();
+    final TextEditingController passwordController = TextEditingController();
+    final TextEditingController usernameController = TextEditingController();
+
+    Future<void> submitData() async {
+      final url = isLogin
+          ? 'https://api.dev.jarvis.cx/api/v1/auth/sign-in' // Đổi thành URL đăng nhập
+          : 'https://api.dev.jarvis.cx/api/v1/auth/sign-up'; // Đổi thành URL đăng ký
+
+      final body = isLogin
+          ? jsonEncode(<String, String>{
+              'email': emailController.text,
+              'password': passwordController.text,
+            })
+          : jsonEncode(<String, String>{
+              'email': emailController.text,
+              'password': passwordController.text,
+              'username': usernameController.text
+            });
+
+      final response = await http.post(
+        Uri.parse(url),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: body,
+      );
+
+      if (response.statusCode == 200) {
+        // Xử lý phản hồi thành công
+        final data = jsonDecode(response.body);
+        print("Success: ${data}");
+      } else {
+        // Xử lý lỗi
+        print("Error: ${response.statusCode}");
+      }
+    }
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -113,15 +153,18 @@ class _AuthScreenState extends State<AuthScreen> {
                 // Registration fields for non-login state
                 if (!isLogin) ...[
                   TextField(
+                    controller: usernameController,
                     decoration: usernameFieldDecoration,
                   ),
                   const SizedBox(height: 10),
                 ],
                 TextField(
+                  controller: emailController,
                   decoration: emailFieldDecoration,
                 ),
                 const SizedBox(height: 10),
                 TextField(
+                  controller: passwordController,
                   obscureText: true,
                   decoration: passwordFieldDecoration,
                 ),
@@ -131,7 +174,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: submitData,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryBlue,
                       padding: const EdgeInsets.all(20),
