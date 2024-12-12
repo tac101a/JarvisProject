@@ -61,11 +61,9 @@ class _SidebarState extends State<Sidebar> {
                 ),
                 // Main icons
                 _buildIcon(0, Icons.chat_bubble, 'Chat'),
-                _buildIcon(1, Icons.book, 'Read'),
-                _buildIcon(2, Icons.search, 'Search'),
-                _buildIcon(3, Icons.create, 'Write'),
-                _buildIcon(4, Icons.translate, 'Translate'),
-                _buildIcon(5, Icons.palette, 'Prompt'),
+                _buildIcon(1, Icons.smart_toy, 'Assistant'),
+                _buildIcon(2, Icons.edit_note, 'Prompt'),
+                _buildIcon(3, Icons.menu_book, 'KB Store'),
               ],
             ),
             Padding(
