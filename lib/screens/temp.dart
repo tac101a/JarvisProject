@@ -250,7 +250,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 Expanded(
                   child: TextField(
                     onSubmitted: (value) async {
-                      await _sendMessage;
+                      _sendMessage;
                     },
                     controller: _controller,
                     decoration:

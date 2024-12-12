@@ -17,7 +17,6 @@ class _AuthScreenState extends State<AuthScreen> {
   // auth service
   final AuthService _authService = AuthService();
 
-
   // State
   bool _pwdVisibility = false;
   bool _cfPwdVisibility = false;
@@ -32,7 +31,7 @@ class _AuthScreenState extends State<AuthScreen> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController confirmPasswordController =
-  TextEditingController();
+      TextEditingController();
 
   @override
   void dispose() {
@@ -46,12 +45,7 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     bool isLogin =
-        GoRouter
-            .of(context)
-            .routeInformationProvider
-            .value
-            .uri
-            .toString() ==
+        GoRouter.of(context).routeInformationProvider.value.uri.toString() ==
             '/login';
 
     // check email valid
@@ -78,9 +72,9 @@ class _AuthScreenState extends State<AuthScreen> {
         return false; // 6 - 32 characters
       }
       bool hasUppercase =
-      password.contains(RegExp(r'[A-Z]')); // uppercase letter
+          password.contains(RegExp(r'[A-Z]')); // uppercase letter
       bool hasLowercase =
-      password.contains(RegExp(r'[a-z]')); // lowercase letter
+          password.contains(RegExp(r'[a-z]')); // lowercase letter
       bool hasDigit = password.contains(RegExp(r'[0-9]')); // number
 
       return hasUppercase && hasLowercase && hasDigit;
@@ -310,8 +304,8 @@ class _AuthScreenState extends State<AuthScreen> {
                   const Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      '* Password must be 6-32 characters long and include ' +
-                          'uppercase letters, lowercase letters, and numbers.',
+                      '* Password must be 6-32 characters long and include '
+                      'uppercase letters, lowercase letters, and numbers.',
                       style: TextStyle(color: Colors.red),
                     ),
                   )

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:jarvis_project/screens/chat_screens.dart';
 import 'package:jarvis_project/screens/read.dart';
 import 'package:jarvis_project/screens/search.dart';
 import 'package:jarvis_project/screens/sidebar.dart';
 import 'package:jarvis_project/screens/temp.dart';
 import 'package:jarvis_project/screens/write.dart';
+import 'package:jarvis_project/screens/prompt_screen.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -24,7 +24,7 @@ class _HomePageState extends State<HomePage> {
     const SearchPage(),
     const WritePage(),
     const PlaceholderPage(title: 'Translate Page'),
-    const PlaceholderPage(title: 'Art Page'),
+    const PromptScreen(),
   ];
 
   // change screen when click to sidebar

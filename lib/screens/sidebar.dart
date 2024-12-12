@@ -65,7 +65,7 @@ class _SidebarState extends State<Sidebar> {
                 _buildIcon(2, Icons.search, 'Search'),
                 _buildIcon(3, Icons.create, 'Write'),
                 _buildIcon(4, Icons.translate, 'Translate'),
-                _buildIcon(5, Icons.palette, 'Art'),
+                _buildIcon(5, Icons.palette, 'Prompt'),
               ],
             ),
             Padding(
