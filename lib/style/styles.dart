@@ -24,10 +24,18 @@ const InputDecoration textFieldDecoration = InputDecoration(
   ),
 );
 
-final InputDecoration passwordFieldDecoration = textFieldDecoration.copyWith(
-  hintText: 'Enter your password',
-  suffixIcon: const Icon(Icons.visibility_off),
-);
+InputDecoration passwordFieldDecoration(
+    {required bool obscureText,
+    required VoidCallback onToggleVisibility,
+    required String hintText}) {
+  return textFieldDecoration.copyWith(
+      hintText: hintText,
+      suffixIcon: IconButton(
+          onPressed: onToggleVisibility,
+          icon: Icon(obscureText ? Icons.visibility : Icons.visibility_off))
+      //suffixIcon: const Icon(Icons.visibility_off),
+      );
+}
 
 final InputDecoration emailFieldDecoration = textFieldDecoration.copyWith(
   hintText: 'Enter your email address',

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../models/user_model.dart';
+
 class AccountPage extends StatelessWidget {
   const AccountPage({super.key});
 
@@ -17,21 +19,21 @@ class AccountPage extends StatelessWidget {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(
+            DrawerHeader(
+              decoration: const BoxDecoration(
                 color: Colors.blue,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CircleAvatar(
+                  const CircleAvatar(
                     radius: 30,
                     child: Icon(Icons.person, size: 40),
                   ),
-                  SizedBox(height: 10),
+                  const SizedBox(height: 10),
                   Text(
-                    'Monica',
-                    style: TextStyle(color: Colors.white, fontSize: 18),
+                    User.username,
+                    style: const TextStyle(color: Colors.white, fontSize: 18),
                   ),
                 ],
               ),
@@ -67,15 +69,15 @@ class AccountPage extends StatelessWidget {
             const SectionTitle(title: 'Profile'),
             SettingsCard(
               title: 'AI Jarvis',
-              subtitle: 'UID: 27ce45b8f...27706',
+              subtitle: 'UID: ${User.id}',
               trailing:
-              TextButton(onPressed: () {}, child: const Text('Change')),
+                  TextButton(onPressed: () {}, child: const Text('Change')),
             ),
             SettingsCard(
               title: 'Email',
-              subtitle: 'myjarvischat@gmail.com',
+              subtitle: User.email,
               trailing:
-              TextButton(onPressed: () {}, child: const Text('Change')),
+                  TextButton(onPressed: () {}, child: const Text('Change')),
             ),
             SettingsCard(
               title: 'Password',
@@ -94,7 +96,7 @@ class AccountPage extends StatelessWidget {
               title: 'Notifications will be sent to this email',
               subtitle: 'myjarvischat@gmail.com',
               trailing:
-              TextButton(onPressed: () {}, child: const Text('Change')),
+                  TextButton(onPressed: () {}, child: const Text('Change')),
             ),
           ],
         ),
@@ -125,7 +127,8 @@ class SettingsCard extends StatelessWidget {
   final String subtitle;
   final Widget trailing;
 
-  const SettingsCard({super.key,
+  const SettingsCard({
+    super.key,
     required this.title,
     required this.subtitle,
     required this.trailing,
@@ -150,21 +153,26 @@ class SettingsCard extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style:
-                const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: const TextStyle(color: Colors.grey),
-              ),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 16),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: const TextStyle(color: Colors.grey),
+                  softWrap: true,
+                ),
+              ],
+            ),
           ),
+          const SizedBox(width: 8),
           trailing,
         ],
       ),
