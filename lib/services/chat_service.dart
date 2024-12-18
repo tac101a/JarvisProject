@@ -4,8 +4,6 @@ import 'package:jarvis_project/models/assistant_model.dart';
 import 'package:jarvis_project/services/api_service.dart';
 
 class ChatService {
-  final ApiService _apiService = ApiService();
-
   // send message
   Future<String> sendMessage(String content, String botID, String conID) async {
     try {
@@ -17,7 +15,7 @@ class ChatService {
         "assistant": {"id": botID, "model": "dify"}
       });
 
-      final response = await _apiService.sendMessage(body);
+      final response = await apiService.sendMessage(body);
 
       return response.body;
     } catch (e) {
@@ -30,7 +28,7 @@ class ChatService {
     try {
       var param = {'assistantId': Assistant.id, 'assistantModel': 'dify'};
 
-      final response = await _apiService.getAllConversation(param);
+      final response = await apiService.getAllConversation(param);
 
       return response.body;
     } catch (e) {
@@ -43,7 +41,7 @@ class ChatService {
     try {
       var param = {'assistantId': Assistant.id, 'assistantModel': 'dify'};
 
-      final response = await _apiService.loadConversation(conID, param);
+      final response = await apiService.loadConversation(conID, param);
 
       return response.body;
     } catch (e) {

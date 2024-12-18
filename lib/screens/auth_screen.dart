@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:jarvis_project/components/ErrorModal.dart';
 import 'package:jarvis_project/models/user_model.dart';
 import 'package:jarvis_project/services/auth_service.dart';
 import 'package:jarvis_project/style/styles.dart';
@@ -35,11 +36,11 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   void dispose() {
+    super.dispose();
     emailController.dispose();
     passwordController.dispose();
     usernameController.dispose();
     confirmPasswordController.dispose();
-    super.dispose();
   }
 
   @override
@@ -124,6 +125,7 @@ class _AuthScreenState extends State<AuthScreen> {
               });
             }
           } catch (e) {
+            showErrorModal(context, e.toString());
             print(e);
           }
         } else {

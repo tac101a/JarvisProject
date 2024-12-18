@@ -6,14 +6,13 @@ import 'api_service.dart';
 import '../util/storage.dart';
 
 class AuthService {
-  final ApiService _apiService = ApiService();
   final Storage _secureStorageService = Storage();
 
   // sign-in
   Future<bool> signIn(String email, String password) async {
     try {
       final response =
-          await _apiService.signIn({'email': email, 'password': password});
+          await apiService.signIn({'email': email, 'password': password});
 
       var data = json.decode(response.body);
       print(data);
@@ -43,7 +42,7 @@ class AuthService {
   // sign-up
   Future<String> signUp(String username, String email, String password) async {
     try {
-      final response = await _apiService
+      final response = await apiService
           .signUp({'email': email, 'password': password, 'username': username});
 
       return response.body;
@@ -55,7 +54,7 @@ class AuthService {
   // sign-out and delete all token
   Future<void> signOut() async {
     try {
-      final response = await _apiService.signOut();
+      final response = await apiService.signOut();
 
       if (response.statusCode == 200) {
         User.isSignedIn = false;
@@ -86,7 +85,7 @@ class AuthService {
           User.refreshToken = token;
         }
 
-        final response = await _apiService.getUser();
+        final response = await apiService.getUser();
 
         var userInf = json.decode(response.body);
         User.init(userInf['id'], userInf['username'], userInf['email']);

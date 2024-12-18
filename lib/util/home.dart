@@ -15,20 +15,37 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   // state
   int _currentIndex = 0;
+  String _inputText = '';
 
   // screen list
-  final List<Widget> _pages = [
-    const ChatScreen(),
-    const BotManagementScreen(),
-    const PromptScreen(),
-    const KnowledgeBaseScreen(),
-  ];
+  late final List<Widget> _pages;
 
   // change screen when click to sidebar
-  void _onIconTap(int index) {
+  void _onIconTap(int index, {String text = ''}) {
     setState(() {
       _currentIndex = index;
+
+      _inputText = text;
+      _pages[0] = ChatScreen(
+        inputText: text,
+      );
     });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    _pages = [
+      ChatScreen(
+        inputText: _inputText,
+      ),
+      const BotManagementScreen(),
+      PromptScreen(
+        onIconTap: _onIconTap,
+      ),
+      const KnowledgeBaseScreen(),
+    ];
   }
 
   @override

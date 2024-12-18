@@ -6,7 +6,10 @@ import 'package:jarvis_project/models/message.dart';
 import 'package:jarvis_project/services/chat_service.dart';
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
+  // constructor
+  final String inputText;
+
+  const ChatScreen({super.key, this.inputText = ''});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -22,11 +25,21 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isLoading = true;
   int _selectedConIndex = -1;
 
+  // text field control
+  final FocusNode _focusNode = FocusNode();
   final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    super.dispose();
+    _focusNode.dispose();
+    _controller.dispose();
+  }
 
   @override
   void initState() {
     super.initState();
+    _controller.text = widget.inputText;
     init();
   }
 
@@ -35,10 +48,15 @@ class _ChatScreenState extends State<ChatScreen> {
     conList.clear();
     var response = await _chatService.getAllConversations();
     final Map<String, dynamic> data = json.decode(response);
-    List<dynamic> items = data['items'];
-    for (var item in items) {
-      conList.add(Conversation(item['id'], item['title']));
+
+    List<dynamic> temp = [];
+    for (var item in data['items']) {
+      temp.add(Conversation(item['id'], item['title']));
     }
+
+    setState(() {
+      conList = temp;
+    });
   }
 
   void init() async {
@@ -103,6 +121,8 @@ class _ChatScreenState extends State<ChatScreen> {
           messages.insert(0, Message('assistant', timestamp, data['message']));
         });
 
+        print(data['remainingUsage']);
+
         // if create new conversation
         if (conID.isEmpty) {
           // create new conversation and reload conversation
@@ -119,10 +139,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator()); // Loading circle
-    }
-
     return Scaffold(
       appBar: AppBar(
         title: Text(Assistant.name!),
@@ -149,8 +165,11 @@ class _ChatScreenState extends State<ChatScreen> {
                     IconButton(
                       icon: const Icon(Icons.add, color: Colors.white),
                       onPressed: () {
-                        // Thực hiện hành động khi bấm nút New Chat
-                        print('New Chat button pressed');
+                        Navigator.of(context).pop();
+                        setState(() {
+                          _selectedConIndex = -1;
+                          messages.clear();
+                        });
                       },
                     ),
                   ],
@@ -184,7 +203,16 @@ class _ChatScreenState extends State<ChatScreen> {
           ],
         )),
       ),
-      body: Column(
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator()); // Loading circle
+    } else {
+      // messages
+      return Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
@@ -206,8 +234,8 @@ class _ChatScreenState extends State<ChatScreen> {
                           maxWidth: MediaQuery.of(context).size.width * 0.7),
                       decoration: BoxDecoration(
                           color: isUserMessage
-                              ? Colors.lightBlueAccent
-                              : Colors.grey,
+                              ? Colors.lightBlueAccent.withOpacity(0.2)
+                              : Colors.grey.withOpacity(0.2),
                           borderRadius: BorderRadius.only(
                             topLeft: const Radius.circular(16.0),
                             topRight: const Radius.circular(16.0),
@@ -249,8 +277,10 @@ class _ChatScreenState extends State<ChatScreen> {
               children: [
                 Expanded(
                   child: TextField(
-                    onSubmitted: (value) async {
-                      _sendMessage;
+                    focusNode: _focusNode,
+                    onSubmitted: (value) {
+                      _sendMessage();
+                      _focusNode.requestFocus();
                     },
                     controller: _controller,
                     decoration:
@@ -265,7 +295,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
         ],
-      ),
-    );
+      );
+    }
   }
 }

@@ -1,67 +1,146 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:jarvis_project/components/ErrorModal.dart';
+import 'package:jarvis_project/models/prompt_model.dart';
+import 'package:jarvis_project/services/prompt_service.dart';
 
 class PromptScreen extends StatefulWidget {
-  const PromptScreen({super.key});
+  final Function(int, {String text}) onIconTap;
+
+  const PromptScreen({super.key, required this.onIconTap});
 
   @override
   State<PromptScreen> createState() => _PromptScreenState();
 }
 
 class _PromptScreenState extends State<PromptScreen> {
+  // service
+  final PromptService _promptService = PromptService();
+
   // State variables
   bool showPublicPrompts = true;
   bool showFavorites = false;
-  List<String> prompts = []; // This will store fetched prompts
-  List<String> favoritePrompts = [];
+  List<dynamic> prompts = []; // This will store fetched prompts
   TextEditingController promptController = TextEditingController();
+  TextEditingController searchBarController = TextEditingController();
+  bool isLoading = true;
+  int _selectedCategory = 0;
 
+  // categories
+  final List<String> _categories = [
+    'All',
+    'business',
+    'career',
+    'chatbot',
+    'coding',
+    'education',
+    'fun',
+    'marketing',
+    'productivity',
+    'seo',
+    'writing',
+    'other'
+  ];
+
+  // init
   @override
   void initState() {
     super.initState();
     _fetchPrompts();
   }
 
-  Future<void> _fetchPrompts(
-      {bool isPublic = true, bool isFavorite = false}) async {
-    // TODO: Replace this with actual API calls.
-    setState(() {
-      if (isPublic) {
-        prompts = ['Public Prompt 1', 'Public Prompt 2', 'Public Prompt 3'];
-      } else {
-        prompts = ['Private Prompt 1', 'Private Prompt 2'];
-      }
-      if (isFavorite) {
-        favoritePrompts = ['Favorite Prompt 1', 'Favorite Prompt 2'];
-      }
-    });
+  // dispose
+  @override
+  void dispose() {
+    super.dispose();
+    promptController.dispose();
+    searchBarController.dispose();
   }
 
-  Future<void> _addToFavorites(String prompt) async {
-    // TODO: Replace this with actual API call for adding to favorites
-    setState(() {
-      favoritePrompts.add(prompt);
-    });
+  // get prompts
+  Future<void> _fetchPrompts({String? query}) async {
+    try {
+      setState(() {
+        isLoading = true;
+      });
+
+      var response = await _promptService.getPrompt(
+          query: query,
+          category: _categories[_selectedCategory] == 'All'
+              ? null
+              : _categories[_selectedCategory],
+          isPublic: showPublicPrompts ? null : showPublicPrompts,
+          isFavorite: showFavorites ? showFavorites : null);
+      var data = json.decode(response);
+
+      List<dynamic> temp = [];
+      for (var item in data['items']) {
+        temp.add(Prompt(
+            item['_id'],
+            item['category'] ?? '',
+            item['content'] ?? '',
+            item['description'] ?? '',
+            item['title'] ?? '',
+            item['isPublic'],
+            item['isFavorite']));
+      }
+
+      setState(() {
+        prompts = temp;
+        isLoading = false;
+      });
+    } catch (e) {
+      showErrorModal(context, e.toString());
+      print(e);
+    }
+  }
+
+  // add to favorite
+  Future<void> _addToFavorites(String promptID) async {
+    try {
+      var response = await _promptService.addToFavorite(promptID);
+      if (response) {
+        print("Added to favorite");
+      }
+    } catch (e) {
+      showErrorModal(context, e.toString());
+      print(e);
+    }
+  }
+
+  // remove from favorite
+  Future<void> _removeFromFavorites(String promptID) async {
+    try {
+      var response = await _promptService.removeFromFavorite(promptID);
+      if (response) {
+        print("Removed from favorite");
+      }
+    } catch (e) {
+      showErrorModal(context, e.toString());
+      print(e);
+    }
   }
 
   Future<void> _createPrompt(String prompt, {bool isPublic = false}) async {
-    // TODO: Replace this with actual API call to create a new prompt
-    setState(() {
-      prompts.add(prompt);
-    });
+    // // TODO: Replace this with actual API call to create a new prompt
+    // setState(() {
+    //   prompts.add(prompt);
+    // });
   }
 
   Future<void> _updatePrompt(int index, String newPrompt) async {
-    // TODO: Replace this with actual API call to update a prompt
-    setState(() {
-      prompts[index] = newPrompt;
-    });
+    // // TODO: Replace this with actual API call to update a prompt
+    // setState(() {
+    //   prompts[index] = newPrompt;
+    // });
   }
 
   Future<void> _deletePrompt(int index) async {
-    // TODO: Replace this with actual API call to delete a prompt
-    setState(() {
-      prompts.removeAt(index);
-    });
+    // // TODO: Replace this with actual API call to delete a prompt
+    // setState(() {
+    //   prompts.removeAt(index);
+    // });
   }
 
   @override
@@ -76,7 +155,7 @@ class _PromptScreenState extends State<PromptScreen> {
               setState(() {
                 showPublicPrompts = !showPublicPrompts;
               });
-              _fetchPrompts(isPublic: showPublicPrompts);
+              _fetchPrompts();
             },
           ),
           IconButton(
@@ -85,73 +164,12 @@ class _PromptScreenState extends State<PromptScreen> {
               setState(() {
                 showFavorites = !showFavorites;
               });
-              if (showFavorites) _fetchPrompts(isFavorite: true);
+              _fetchPrompts();
             },
           )
         ],
       ),
-      body: ListView.builder(
-        itemCount: showFavorites ? favoritePrompts.length : prompts.length,
-        itemBuilder: (context, index) {
-          final prompt =
-              showFavorites ? favoritePrompts[index] : prompts[index];
-          return ListTile(
-            title: Text(prompt),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () {
-                    // Edit prompt
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        promptController.text = prompt;
-                        return AlertDialog(
-                          title: const Text('Edit Prompt'),
-                          content: TextField(
-                            controller: promptController,
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                              child: const Text('Cancel'),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                _updatePrompt(index, promptController.text);
-                                Navigator.pop(context);
-                              },
-                              child: const Text('Update'),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () {
-                    // Delete prompt
-                    _deletePrompt(index);
-                  },
-                ),
-                if (!showFavorites)
-                  IconButton(
-                    icon: const Icon(Icons.favorite_border),
-                    onPressed: () {
-                      _addToFavorites(prompt);
-                    },
-                  ),
-              ],
-            ),
-          );
-        },
-      ),
+      body: _buildBody(),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           // Add new prompt
@@ -185,6 +203,182 @@ class _PromptScreenState extends State<PromptScreen> {
           );
         },
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    return Column(
+      children: [
+        // search bar
+        searchBar(),
+        // categories select
+        Row(
+          children: [
+            Container(
+                height: 100,
+                width: MediaQuery.of(context).size.width - 62,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _categories.length,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                        child: ChoiceChip(
+                          label: Text(_categories[index]),
+                          selected: _selectedCategory == index,
+                          onSelected: (bool selected) {
+                            setState(() {
+                              _selectedCategory =
+                                  selected ? index : _selectedCategory;
+                            });
+                            _fetchPrompts();
+                          },
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          selectedColor: Colors.black,
+                          labelStyle: TextStyle(
+                              color: _selectedCategory == index
+                                  ? Colors.white
+                                  : Colors.black),
+                          backgroundColor: Colors.grey[200],
+                          showCheckmark: false,
+                          side: BorderSide.none,
+                        ),
+                      );
+                    }))
+          ],
+        ),
+        // when loading
+        if (isLoading) const Center(child: CircularProgressIndicator()),
+
+        // finish loading
+        if (!isLoading && prompts.isEmpty) // if list is empty
+          const Center(
+              child: Text(
+            'Empty list',
+            style: TextStyle(color: Colors.grey),
+          )),
+        if (!isLoading && prompts.isNotEmpty)
+          Expanded(
+              child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: prompts.length,
+            itemBuilder: (context, index) {
+              final prompt = prompts[index];
+
+              return ListTile(
+                title: Text(prompt.title),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // edit button
+                    IconButton(
+                      icon: const Icon(Icons.edit),
+                      onPressed: () {
+                        // Edit prompt
+                        showDialog(
+                          context: context,
+                          builder: (context) {
+                            promptController.text = prompt.title;
+                            return AlertDialog(
+                              title: const Text('Edit Prompt'),
+                              content: TextField(
+                                controller: promptController,
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child: const Text('Cancel'),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    _updatePrompt(index, promptController.text);
+                                    Navigator.pop(context);
+                                  },
+                                  child: const Text('Update'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                    ),
+                    // delete button
+                    IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: () {
+                        // Delete prompt
+                        _deletePrompt(index);
+                      },
+                    ),
+                    // favorite button
+                    IconButton(
+                      icon: prompt.isFavorite
+                          ? const Icon(Icons.favorite)
+                          : const Icon(Icons.favorite_border),
+                      onPressed: () {
+                        if (prompt.isFavorite) {
+                          _removeFromFavorites(prompt.id);
+                        } else {
+                          _addToFavorites(prompt.id);
+                        }
+                        setState(() {
+                          prompt.isFavorite = !prompt.isFavorite;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                onTap: () {
+                  widget.onIconTap(0, text: prompt.content);
+                },
+              );
+            },
+          ))
+      ],
+    );
+  }
+
+  Widget searchBar() {
+    return Container(
+      width: 300,
+      margin: const EdgeInsets.only(top: 16),
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(25),
+        border: Border.all(color: Colors.purple.shade200, width: 1),
+      ),
+      child: Row(
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 0),
+            child: Icon(
+              Icons.search, // search icon
+              color: Colors.grey,
+            ),
+          ),
+          Expanded(
+            child: TextField(
+              controller: searchBarController,
+              style: const TextStyle(fontSize: 14),
+              decoration: const InputDecoration(
+                contentPadding:
+                    EdgeInsets.symmetric(vertical: 0, horizontal: 0),
+                hintText: "Search",
+                border: InputBorder.none, // remove text field border
+                hintStyle: TextStyle(color: Colors.grey),
+              ),
+              onSubmitted: (value) {
+                _fetchPrompts(query: value);
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
