@@ -8,6 +8,7 @@ final ApiService apiService = ApiService();
 
 final class ApiService {
   static const baseURL = 'https://api.dev.jarvis.cx';
+  static const kbURL = 'https://knowledge-api.dev.jarvis.cx';
 
   // ---------- Auth ----------
   // sign-in
@@ -210,6 +211,39 @@ final class ApiService {
           'Authorization': 'Bearer ${User.refreshToken}'
         },
       );
+      return response;
+    } catch (e) {
+      throw Exception('Request Failed: $e');
+    }
+  }
+
+  // ---------- assistant ----------
+  Future<http.Response> kbSignIn() async {
+    // url
+    var url = kbURL + aiEndpoints['kbSignIn']!;
+
+    // request
+    try {
+      final response = await http.post(Uri.parse(url),
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode({'token': User.refreshToken}));
+      return response;
+    } catch (e) {
+      throw Exception('Request Failed: $e');
+    }
+  }
+
+  Future<http.Response> getAssistant(Map<String, String> param) async {
+    // url
+    var url = kbURL + aiEndpoints['getAssistant']!;
+
+    // request
+    try {
+      final response = await http
+          .get(Uri.parse(url).replace(queryParameters: param), headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${User.kbAccessToken}'
+      });
       return response;
     } catch (e) {
       throw Exception('Request Failed: $e');

@@ -76,6 +76,26 @@ class AuthService {
     return result;
   }
 
+  // kb sign in
+  Future<bool> kbSignIn() async {
+    try {
+      var response = await apiService.kbSignIn();
+
+      if (response.statusCode == 200) {
+        var data = json.decode(response.body);
+        User.kbAccessToken = data['token']['accessToken'];
+        User.kbRefreshToken = data['token']['refreshToken'];
+        print(data['token']);
+
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      throw Exception(e);
+    }
+  }
+
   // get user information
   Future<bool> getUser() async {
     try {
@@ -86,9 +106,10 @@ class AuthService {
         }
 
         final response = await apiService.getUser();
-
         var userInf = json.decode(response.body);
         User.init(userInf['id'], userInf['username'], userInf['email']);
+
+        await kbSignIn();
         return true;
       } else {
         return false;

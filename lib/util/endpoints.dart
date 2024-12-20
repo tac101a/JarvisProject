@@ -20,3 +20,9 @@ const promptEndpoints = {
   'updatePrompt': '/api/v1/prompts/{id}',
   'deletePrompt': '/api/v1/prompts/{id}'
 };
+
+const aiEndpoints = {
+  'kbSignIn': '/kb-core/v1/auth/external-sign-in',
+  'getAssistant': '/kb-core/v1/ai-assistant',
+  'createAssistant': '/kb-core/v1/ai-assistant'
+};

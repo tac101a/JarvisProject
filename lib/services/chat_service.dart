@@ -26,11 +26,17 @@ class ChatService {
   // load all conversation
   Future<String> getAllConversations() async {
     try {
-      var param = {'assistantId': Assistant.id, 'assistantModel': 'dify'};
+      var param = {
+        'assistantId': Assistant.currentBot.id,
+        'assistantModel': 'dify'
+      };
 
       final response = await apiService.getAllConversation(param);
 
-      return response.body;
+      if (response.statusCode == 200) {
+        return response.body;
+      }
+      throw (Exception('Request failed'));
     } catch (e) {
       throw Exception(e);
     }
@@ -39,7 +45,10 @@ class ChatService {
   // load conversation
   Future<String> loadConversation(String conID) async {
     try {
-      var param = {'assistantId': Assistant.id, 'assistantModel': 'dify'};
+      var param = {
+        'assistantId': Assistant.currentBot.id,
+        'assistantModel': 'dify'
+      };
 
       final response = await apiService.loadConversation(conID, param);
 

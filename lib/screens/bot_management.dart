@@ -1,5 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:jarvis_project/models/assistant_model.dart';
+import 'package:jarvis_project/services/assistant_service.dart';
+
+import '../components/error_modal.dart';
+import '../components/search_bar.dart';
 
 class BotManagementScreen extends StatefulWidget {
   const BotManagementScreen({super.key});
@@ -9,71 +15,238 @@ class BotManagementScreen extends StatefulWidget {
 }
 
 class _BotManagementScreenState extends State<BotManagementScreen> {
+  // service
+  final AssistantService _assistantService = AssistantService();
+
+  // util
   // Predefined bots (from assistant_model.dart)
-  final List<String> predefinedBots = botID.values.toList();
+  final List<dynamic> builtinBots = botID.keys.toList().map((element) {
+    return Assistant(id: element, name: botID[element]!);
+  }).toList();
 
   // User-created bots
-  List<String> userCreatedBots = [];
+  List<dynamic> customBots = [];
+
+  // state
+  int _selectedType = 0;
+  bool isLoading = true;
+  List<dynamic> showingList = [];
 
   // Text controller for creating a new bot
-  final TextEditingController _botNameController = TextEditingController();
+  final TextEditingController searchBarController = TextEditingController();
+
+  final List<String> _assistantType = ['Built-in', 'Custom'];
+
+  // init
+  @override
+  void initState() {
+    super.initState();
+    _getBots();
+    showingList = builtinBots;
+  }
+
+  // dispose
+  @override
+  void dispose() {
+    super.dispose();
+    searchBarController.dispose();
+  }
+
+  Future<void> _getBots({String? query}) async {
+    try {
+      setState(() {
+        isLoading = true;
+      });
+
+      var response = await _assistantService.getAssistant();
+      var data = json.decode(response);
+
+      List<dynamic> temp = [];
+      for (var item in data['data']) {
+        temp.add(Assistant(
+            id: item['id'],
+            name: item['assistantName'],
+            instructions: item['instructions'],
+            description: item['description']));
+      }
+
+      setState(() {
+        customBots = temp;
+        isLoading = false;
+      });
+    } catch (e) {
+      showErrorModal(context, e.toString());
+      print(e);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AI Bot Management'),
+        title: const Text('Assistants Library'),
       ),
-      body: Column(
-        children: [
-          // Section for creating a new bot
-          _buildCreateBotSection(),
-
-          // Divider between create bot and lists
-          const Divider(),
-
-          // Predefined Bots Section
-          _buildPredefinedBotsSection(),
-
-          // User-Created Bots Section
-          _buildUserCreatedBotsSection(),
-        ],
+      body: _buildBody(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Add new bot
+        },
+        child: const Icon(Icons.add),
       ),
+    );
+  }
+
+  Widget _buildBody() {
+    return Column(
+      children: [
+        // search bar
+        Padding(
+          padding: const EdgeInsets.all(8),
+          child: searchBar(
+              controller: searchBarController,
+              onChanged: (value) {
+                var list = _selectedType == 0 ? builtinBots : customBots;
+                var temp = list.where((element) {
+                  var name = element.name.toLowerCase();
+                  var q = value.toLowerCase();
+                  return name.contains(q);
+                }).toList();
+
+                setState(() {
+                  showingList = temp;
+                });
+              }),
+        ),
+
+        // categories select
+        Row(
+          children: [
+            Expanded(
+                child: Container(
+                    height: 60,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _assistantType.length,
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding:
+                            const EdgeInsets.symmetric(horizontal: 4.0),
+                            child: ChoiceChip(
+                              label: Text(_assistantType[index]),
+                              selected: _selectedType == index,
+                              onSelected: (bool selected) {
+                                setState(() {
+                                  _selectedType =
+                                  selected ? index : _selectedType;
+                                  showingList =
+                                  index == 0 ? builtinBots : customBots;
+                                });
+                              },
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              selectedColor: Colors.black,
+                              labelStyle: TextStyle(
+                                  color: _selectedType == index
+                                      ? Colors.white
+                                      : Colors.black),
+                              backgroundColor: Colors.grey[200],
+                              showCheckmark: false,
+                              side: BorderSide.none,
+                            ),
+                          );
+                        }))),
+          ],
+        ),
+        // when loading
+        if (isLoading) const Center(child: CircularProgressIndicator()),
+
+        // finish loading
+        if (!isLoading && showingList.isEmpty) // if list is empty
+          const Center(
+              child: Text(
+                'Empty list',
+                style: TextStyle(color: Colors.grey),
+              )),
+        if (!isLoading && showingList.isNotEmpty) ...[
+          Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: showingList.length,
+                itemBuilder: (context, index) {
+                  final bot = showingList[index];
+
+                  return ListTile(
+                    title: Text(bot.name),
+                    leading: CircleAvatar(
+                      radius: 13,
+                      backgroundImage: AssetImage(bot.image),
+                    ),
+                    // trailing: Row(
+                    //   mainAxisSize: MainAxisSize.min,
+                    //   children: [
+                    //     // edit button
+                    //     IconButton(
+                    //       icon: const Icon(Icons.edit),
+                    //       onPressed: () {
+                    //         // TODO: edit bot
+                    //       },
+                    //     ),
+                    //     // delete button
+                    //     IconButton(
+                    //       icon: const Icon(Icons.delete),
+                    //       onPressed: () {
+                    //         // TODO: delete list
+                    //       },
+                    //     ),
+                    //     // favorite button
+                    //   ],
+                    // ),
+                    onTap: () {
+                      // TODO: select bot
+                      // widget.onIconTap(0, text: prompt.content);
+                    },
+                  );
+                },
+              ))
+        ]
+      ],
     );
   }
 
   // Build Create Bot Section
-  Widget _buildCreateBotSection() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _botNameController,
-              decoration: const InputDecoration(
-                labelText: 'Enter Bot Name',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          ElevatedButton(
-            onPressed: () {
-              // Add new bot
-              if (_botNameController.text.isNotEmpty) {
-                setState(() {
-                  userCreatedBots.add(_botNameController.text);
-                });
-                _botNameController.clear();
-              }
-            },
-            child: const Text('Create Bot'),
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildCreateBotSection() {
+  //   return Padding(
+  //     padding: const EdgeInsets.all(16.0),
+  //     child: Row(
+  //       children: [
+  //         Expanded(
+  //           child: TextField(
+  //             controller: _botNameController,
+  //             decoration: const InputDecoration(
+  //               labelText: 'Enter Bot Name',
+  //               border: OutlineInputBorder(),
+  //             ),
+  //           ),
+  //         ),
+  //         const SizedBox(width: 10),
+  //         ElevatedButton(
+  //           onPressed: () {
+  //             // Add new bot
+  //             if (_botNameController.text.isNotEmpty) {
+  //               setState(() {
+  //                 customBots.add(_botNameController.text);
+  //               });
+  //               _botNameController.clear();
+  //             }
+  //           },
+  //           child: const Text('Create Bot'),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   // Build Predefined Bots Section
   Widget _buildPredefinedBotsSection() {
@@ -90,9 +263,9 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
           ),
           Expanded(
             child: ListView.builder(
-              itemCount: predefinedBots.length,
+              itemCount: builtinBots.length,
               itemBuilder: (context, index) {
-                final botName = predefinedBots[index];
+                final botName = builtinBots[index].name;
                 return _buildBotCard(botName, isPredefined: true);
               },
             ),
@@ -117,9 +290,9 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
           ),
           Expanded(
             child: ListView.builder(
-              itemCount: userCreatedBots.length,
+              itemCount: customBots.length,
               itemBuilder: (context, index) {
-                final botName = userCreatedBots[index];
+                final botName = customBots[index];
                 return _buildBotCard(botName,
                     isPredefined: false, index: index);
               },
@@ -141,27 +314,28 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
         trailing: isPredefined
             ? null // No actions for predefined bots
             : PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == 'Update') {
-                    _showUpdateBotDialog(index!, botName);
-                  } else if (value == 'Delete') {
-                    setState(() {
-                      userCreatedBots.removeAt(index!);
-                    });
-                  } else if (value == 'Preview') {
-                    _previewChatWithBot(botName);
-                  } else if (value == 'Publish') {
-                    _publishBot(botName);
-                  }
-                },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(value: 'Update', child: Text('Update')),
-                  const PopupMenuItem(value: 'Delete', child: Text('Delete')),
-                  const PopupMenuItem(
-                      value: 'Preview', child: Text('Preview Chat')),
-                  const PopupMenuItem(value: 'Publish', child: Text('Publish')),
-                ],
-              ),
+          onSelected: (value) {
+            if (value == 'Update') {
+              _showUpdateBotDialog(index!, botName);
+            } else if (value == 'Delete') {
+              setState(() {
+                customBots.removeAt(index!);
+              });
+            } else if (value == 'Preview') {
+              _previewChatWithBot(botName);
+            } else if (value == 'Publish') {
+              _publishBot(botName);
+            }
+          },
+          itemBuilder: (context) =>
+          [
+            const PopupMenuItem(value: 'Update', child: Text('Update')),
+            const PopupMenuItem(value: 'Delete', child: Text('Delete')),
+            const PopupMenuItem(
+                value: 'Preview', child: Text('Preview Chat')),
+            const PopupMenuItem(value: 'Publish', child: Text('Publish')),
+          ],
+        ),
         onTap: () {
           if (!isPredefined) {
             _manageBotKnowledge(botName);
@@ -194,7 +368,7 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
             TextButton(
               onPressed: () {
                 setState(() {
-                  userCreatedBots[index] = updateController.text;
+                  customBots[index] = updateController.text;
                 });
                 Navigator.pop(context);
               },
@@ -211,19 +385,20 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => Scaffold(
-          appBar: AppBar(
-            title: Text('Manage Knowledge for $botName'),
-          ),
-          body: Center(
-            child: ElevatedButton(
-              onPressed: () {
-                // Add or remove knowledge to/from the bot
-              },
-              child: const Text('Add/Remove Knowledge'),
+        builder: (context) =>
+            Scaffold(
+              appBar: AppBar(
+                title: Text('Manage Knowledge for $botName'),
+              ),
+              body: Center(
+                child: ElevatedButton(
+                  onPressed: () {
+                    // Add or remove knowledge to/from the bot
+                  },
+                  child: const Text('Add/Remove Knowledge'),
+                ),
+              ),
             ),
-          ),
-        ),
       ),
     );
   }

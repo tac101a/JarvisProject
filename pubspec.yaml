@@ -67,6 +67,10 @@ flutter:
     - lib/assets/avatar.jpg
     - lib/assets/Icon-192.png
     - lib/assets/logo.png
+    - lib/assets/bot-icon.png
+    - lib/assets/claude-ai-icon.png
+    - lib/assets/gemini-icon.png
+    - lib/assets/openai-icon.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

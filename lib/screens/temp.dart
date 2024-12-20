@@ -24,6 +24,7 @@ class _ChatScreenState extends State<ChatScreen> {
   List<dynamic> messages = [];
   bool _isLoading = true;
   int _selectedConIndex = -1;
+  bool _isTextInputFocus = false;
 
   // text field control
   final FocusNode _focusNode = FocusNode();
@@ -40,6 +41,13 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     _controller.text = widget.inputText;
+
+    _focusNode.addListener(() {
+      setState(() {
+        _isTextInputFocus = _focusNode.hasFocus;
+      });
+    });
+
     init();
   }
 
@@ -112,8 +120,8 @@ class _ChatScreenState extends State<ChatScreen> {
           messages.insert(0, Message('assistant', timestamp, '...'));
         });
 
-        var response =
-            await _chatService.sendMessage(content, Assistant.id, conID);
+        var response = await _chatService.sendMessage(
+            content, Assistant.currentBot.id, conID);
         var data = json.decode(response);
         setState(() {
           // replace ... with the reply message
@@ -141,7 +149,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(Assistant.name!),
+        title: Text(Assistant.currentBot.name!),
       ),
       drawer: Drawer(
         child: SafeArea(
@@ -271,31 +279,92 @@ class _ChatScreenState extends State<ChatScreen> {
               },
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    focusNode: _focusNode,
-                    onSubmitted: (value) {
-                      _sendMessage();
-                      _focusNode.requestFocus();
-                    },
-                    controller: _controller,
-                    decoration:
-                        const InputDecoration(labelText: 'Enter a message'),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: _sendMessage,
-                ),
-              ],
-            ),
-          ),
+          TextInputBox()
         ],
       );
     }
+  }
+
+  Widget TextInputBox() {
+    return Container(
+        margin: const EdgeInsets.all(8.0),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                FilledButton.tonal(
+                  onPressed: () {},
+                  style: ButtonStyle(
+                      elevation: WidgetStatePropertyAll(0),
+                      backgroundColor:
+                          WidgetStatePropertyAll(Colors.grey.shade200)),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 12.0,
+                        backgroundColor: Colors.blue,
+                        child: Text(
+                          'M',
+                          style: TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      SizedBox(width: 8.0),
+                      // Tên
+                      Text(
+                        'Monica',
+                        style: TextStyle(
+                            fontSize: 14.0, fontWeight: FontWeight.w500),
+                      ),
+                      Icon(Icons.arrow_drop_down)
+                    ],
+                  ),
+                ),
+
+                // Avatar
+              ],
+            ),
+            const SizedBox(
+              height: 8.0,
+            ),
+            Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+                decoration: BoxDecoration(
+                  border: _isTextInputFocus
+                      ? Border.all(color: Colors.purple, width: 0.5)
+                      : null,
+                  borderRadius: BorderRadius.circular(16.0),
+                  color: Colors.grey[200],
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        maxLines: 3,
+                        style: TextStyle(fontSize: 14.0),
+                        focusNode: _focusNode,
+                        onSubmitted: (value) {
+                          _sendMessage();
+                          _focusNode.requestFocus();
+                        },
+                        controller: _controller,
+                        decoration: const InputDecoration(
+                            hintText: 'Ask me anything...',
+                            border: InputBorder.none),
+                      ),
+                    ),
+                    const SizedBox(width: 8.0),
+                    IconButton(
+                      onPressed: () {},
+                      icon: Icon(
+                        Icons.send,
+                        color: Colors.lightBlueAccent[100],
+                      ),
+                    )
+                  ],
+                ))
+          ],
+        ));
   }
 }

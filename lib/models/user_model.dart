@@ -7,6 +7,9 @@ class User {
   static String accessToken = '';
   static String refreshToken = '';
 
+  static String kbAccessToken = '';
+  static String kbRefreshToken = '';
+
   static void init(String id, String username, String email) {
     User.id = id;
     User.username = username;

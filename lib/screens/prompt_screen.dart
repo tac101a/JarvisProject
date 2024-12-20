@@ -1,9 +1,11 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:jarvis_project/components/ErrorModal.dart';
+import 'package:jarvis_project/components/error_modal.dart';
 import 'package:jarvis_project/models/prompt_model.dart';
 import 'package:jarvis_project/services/prompt_service.dart';
+
+import '../components/search_bar.dart';
 
 class PromptScreen extends StatefulWidget {
   final Function(int, {String text}) onIconTap;
@@ -211,44 +213,53 @@ class _PromptScreenState extends State<PromptScreen> {
     return Column(
       children: [
         // search bar
-        searchBar(),
+        Padding(
+          padding: const EdgeInsets.all(8),
+          child: searchBar(
+              controller: searchBarController,
+              onSubmitted: (value) {
+                _fetchPrompts(query: value);
+              }),
+        ),
+
         // categories select
         Row(
           children: [
-            Container(
-                height: 100,
-                width: MediaQuery.of(context).size.width - 62,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _categories.length,
-                    itemBuilder: (context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                        child: ChoiceChip(
-                          label: Text(_categories[index]),
-                          selected: _selectedCategory == index,
-                          onSelected: (bool selected) {
-                            setState(() {
-                              _selectedCategory =
-                                  selected ? index : _selectedCategory;
-                            });
-                            _fetchPrompts();
-                          },
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          selectedColor: Colors.black,
-                          labelStyle: TextStyle(
-                              color: _selectedCategory == index
-                                  ? Colors.white
-                                  : Colors.black),
-                          backgroundColor: Colors.grey[200],
-                          showCheckmark: false,
-                          side: BorderSide.none,
-                        ),
-                      );
-                    }))
+            Expanded(
+                child: Container(
+                    height: 60,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _categories.length,
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 4.0),
+                            child: ChoiceChip(
+                              label: Text(_categories[index]),
+                              selected: _selectedCategory == index,
+                              onSelected: (bool selected) {
+                                setState(() {
+                                  _selectedCategory =
+                                      selected ? index : _selectedCategory;
+                                });
+                                _fetchPrompts();
+                              },
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              selectedColor: Colors.black,
+                              labelStyle: TextStyle(
+                                  color: _selectedCategory == index
+                                      ? Colors.white
+                                      : Colors.black),
+                              backgroundColor: Colors.grey[200],
+                              showCheckmark: false,
+                              side: BorderSide.none,
+                            ),
+                          );
+                        }))),
           ],
         ),
         // when loading
@@ -262,7 +273,7 @@ class _PromptScreenState extends State<PromptScreen> {
             style: TextStyle(color: Colors.grey),
           )),
         if (!isLoading && prompts.isNotEmpty)
-          Expanded(
+          Flexible(
               child: ListView.builder(
             shrinkWrap: true,
             itemCount: prompts.length,
@@ -341,45 +352,6 @@ class _PromptScreenState extends State<PromptScreen> {
             },
           ))
       ],
-    );
-  }
-
-  Widget searchBar() {
-    return Container(
-      width: 300,
-      margin: const EdgeInsets.only(top: 16),
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: Colors.purple.shade200, width: 1),
-      ),
-      child: Row(
-        children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 0),
-            child: Icon(
-              Icons.search, // search icon
-              color: Colors.grey,
-            ),
-          ),
-          Expanded(
-            child: TextField(
-              controller: searchBarController,
-              style: const TextStyle(fontSize: 14),
-              decoration: const InputDecoration(
-                contentPadding:
-                    EdgeInsets.symmetric(vertical: 0, horizontal: 0),
-                hintText: "Search",
-                border: InputBorder.none, // remove text field border
-                hintStyle: TextStyle(color: Colors.grey),
-              ),
-              onSubmitted: (value) {
-                _fetchPrompts(query: value);
-              },
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

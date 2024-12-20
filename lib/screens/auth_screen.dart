@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:jarvis_project/components/ErrorModal.dart';
-import 'package:jarvis_project/models/user_model.dart';
+import 'package:jarvis_project/components/error_modal.dart';
 import 'package:jarvis_project/services/auth_service.dart';
 import 'package:jarvis_project/style/styles.dart';
 import 'package:go_router/go_router.dart';
