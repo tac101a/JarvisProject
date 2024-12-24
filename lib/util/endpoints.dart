@@ -17,8 +17,8 @@ const promptEndpoints = {
   'createPrompt': '/api/v1/prompts',
   'addPromptToFavorite': '/api/v1/prompts/',
   'removePromptFromFavorite': '/api/v1/prompts/',
-  'updatePrompt': '/api/v1/prompts/{id}',
-  'deletePrompt': '/api/v1/prompts/{id}'
+  'updatePrompt': '/api/v1/prompts/',
+  'deletePrompt': '/api/v1/prompts/'
 };
 
 const aiEndpoints = {

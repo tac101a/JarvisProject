@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:jarvis_project/models/assistant_model.dart';
 import 'package:jarvis_project/models/conversation_model.dart';
 import 'package:jarvis_project/models/message.dart';
+import 'package:jarvis_project/models/user_model.dart';
 import 'package:jarvis_project/services/chat_service.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -264,11 +265,11 @@ class _ChatScreenState extends State<ChatScreen> {
                               const Text(
                                 'AI',
                                 style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 12),
+                                    fontWeight: FontWeight.bold, fontSize: 14),
                               ),
                             Text(
                               message.content,
-                              style: const TextStyle(fontSize: 16),
+                              style: const TextStyle(fontSize: 14),
                             )
                           ],
                         ),
@@ -279,26 +280,27 @@ class _ChatScreenState extends State<ChatScreen> {
               },
             ),
           ),
-          TextInputBox()
+          textInputBox()
         ],
       );
     }
   }
 
-  Widget TextInputBox() {
+  Widget textInputBox() {
     return Container(
         margin: const EdgeInsets.all(8.0),
         child: Column(
           children: [
             Row(
               children: [
+                // TODO ai select
                 FilledButton.tonal(
                   onPressed: () {},
                   style: ButtonStyle(
-                      elevation: WidgetStatePropertyAll(0),
+                      elevation: const WidgetStatePropertyAll(0),
                       backgroundColor:
                           WidgetStatePropertyAll(Colors.grey.shade200)),
-                  child: Row(
+                  child: const Row(
                     children: [
                       CircleAvatar(
                         radius: 12.0,
@@ -333,7 +335,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 decoration: BoxDecoration(
                   border: _isTextInputFocus
                       ? Border.all(color: Colors.purple, width: 0.5)
-                      : null,
+                      : Border.all(color: Colors.grey.shade200, width: 0.5),
                   borderRadius: BorderRadius.circular(16.0),
                   color: Colors.grey[200],
                 ),
@@ -341,9 +343,11 @@ class _ChatScreenState extends State<ChatScreen> {
                   children: [
                     Expanded(
                       child: TextField(
+                        minLines: 1,
                         maxLines: 3,
-                        style: TextStyle(fontSize: 14.0),
+                        style: const TextStyle(fontSize: 14.0),
                         focusNode: _focusNode,
+                        textInputAction: TextInputAction.done,
                         onSubmitted: (value) {
                           _sendMessage();
                           _focusNode.requestFocus();
@@ -356,7 +360,10 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                     const SizedBox(width: 8.0),
                     IconButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        _sendMessage();
+                        _focusNode.requestFocus();
+                      },
                       icon: Icon(
                         Icons.send,
                         color: Colors.lightBlueAccent[100],

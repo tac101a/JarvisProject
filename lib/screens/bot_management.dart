@@ -8,7 +8,10 @@ import '../components/error_modal.dart';
 import '../components/search_bar.dart';
 
 class BotManagementScreen extends StatefulWidget {
-  const BotManagementScreen({super.key});
+
+  final Function(int, {String text}) onBotSelect;
+
+  const BotManagementScreen({super.key, required this.onBotSelect});
 
   @override
   State<BotManagementScreen> createState() => _BotManagementScreenState();
@@ -205,7 +208,11 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
                     // ),
                     onTap: () {
                       // TODO: select bot
-                      // widget.onIconTap(0, text: prompt.content);
+                      // change selected ai
+                      Assistant.currentBot = bot;
+
+                      // switch to chat screen
+                      widget.onBotSelect(0);
                     },
                   );
                 },

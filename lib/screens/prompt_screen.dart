@@ -4,13 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:jarvis_project/components/error_modal.dart';
 import 'package:jarvis_project/models/prompt_model.dart';
 import 'package:jarvis_project/services/prompt_service.dart';
+import 'package:jarvis_project/style/styles.dart';
 
 import '../components/search_bar.dart';
 
 class PromptScreen extends StatefulWidget {
-  final Function(int, {String text}) onIconTap;
+  final Function(int, {String text}) onPromptSelect;
 
-  const PromptScreen({super.key, required this.onIconTap});
+  const PromptScreen({super.key, required this.onPromptSelect});
 
   @override
   State<PromptScreen> createState() => _PromptScreenState();
@@ -24,25 +25,52 @@ class _PromptScreenState extends State<PromptScreen> {
   bool showPublicPrompts = true;
   bool showFavorites = false;
   List<dynamic> prompts = []; // This will store fetched prompts
-  TextEditingController promptController = TextEditingController();
-  TextEditingController searchBarController = TextEditingController();
   bool isLoading = true;
   int _selectedCategory = 0;
+  String createPromptScope = 'private';
+  String _selectedLanguage = 'English';
+  String _createPromptCategory = 'Other';
+
+  // text field controller
+  TextEditingController promptController = TextEditingController();
+  TextEditingController searchBarController = TextEditingController();
+  TextEditingController createPromptNameController = TextEditingController();
+  TextEditingController createPromptDescriptionController =
+      TextEditingController();
+  TextEditingController createPromptContentController = TextEditingController();
 
   // categories
   final List<String> _categories = [
     'All',
-    'business',
-    'career',
-    'chatbot',
-    'coding',
-    'education',
-    'fun',
-    'marketing',
-    'productivity',
-    'seo',
-    'writing',
-    'other'
+    'Business',
+    'Career',
+    'Chatbot',
+    'Coding',
+    'Education',
+    'Fun',
+    'Marketing',
+    'Productivity',
+    'Seo',
+    'Writing',
+    'Other'
+  ];
+
+  // languages
+  final List<String> _languages = [
+    'English',
+    'Vietnamese',
+    'French',
+    'Spanish',
+    'Japanese',
+    'German',
+    'Chinese',
+    'Korean',
+    'Italian',
+    'Russian',
+    'Arabic',
+    'Portuguese',
+    'Hindi',
+    'Bengali'
   ];
 
   // init
@@ -58,6 +86,18 @@ class _PromptScreenState extends State<PromptScreen> {
     super.dispose();
     promptController.dispose();
     searchBarController.dispose();
+    createPromptNameController.dispose();
+  }
+
+  void resetDialogState() {
+    setState(() {
+      createPromptScope = 'private';
+      _selectedLanguage = 'English';
+      _createPromptCategory = 'Other';
+      createPromptNameController.text = '';
+      createPromptDescriptionController.text = '';
+      createPromptContentController.text = '';
+    });
   }
 
   // get prompts
@@ -102,12 +142,9 @@ class _PromptScreenState extends State<PromptScreen> {
   Future<void> _addToFavorites(String promptID) async {
     try {
       var response = await _promptService.addToFavorite(promptID);
-      if (response) {
-        print("Added to favorite");
-      }
+      if (response) {}
     } catch (e) {
       showErrorModal(context, e.toString());
-      print(e);
     }
   }
 
@@ -115,34 +152,46 @@ class _PromptScreenState extends State<PromptScreen> {
   Future<void> _removeFromFavorites(String promptID) async {
     try {
       var response = await _promptService.removeFromFavorite(promptID);
-      if (response) {
-        print("Removed from favorite");
-      }
+      if (response) {}
     } catch (e) {
       showErrorModal(context, e.toString());
-      print(e);
     }
   }
 
-  Future<void> _createPrompt(String prompt, {bool isPublic = false}) async {
-    // // TODO: Replace this with actual API call to create a new prompt
-    // setState(() {
-    //   prompts.add(prompt);
-    // });
+  Future<void> _createPrompt() async {
+    var res = await _promptService.createPrompt(
+        title: createPromptNameController.text,
+        language: _selectedLanguage,
+        category: _createPromptCategory,
+        isPublic: createPromptScope == 'public',
+        description: createPromptDescriptionController.text,
+        content: createPromptContentController.text);
+
+    if (res) {
+      _fetchPrompts();
+    }
   }
 
-  Future<void> _updatePrompt(int index, String newPrompt) async {
-    // // TODO: Replace this with actual API call to update a prompt
-    // setState(() {
-    //   prompts[index] = newPrompt;
-    // });
+  Future<void> _updatePrompt(String id) async {
+    var res = await _promptService.updatePrompt(id,
+        title: createPromptNameController.text,
+        language: _selectedLanguage,
+        category: _createPromptCategory,
+        isPublic: createPromptScope == 'public',
+        description: createPromptDescriptionController.text,
+        content: createPromptContentController.text);
+
+    if (res) {
+      _fetchPrompts();
+    }
   }
 
-  Future<void> _deletePrompt(int index) async {
-    // // TODO: Replace this with actual API call to delete a prompt
-    // setState(() {
-    //   prompts.removeAt(index);
-    // });
+  Future<void> _deletePrompt(String id) async {
+    var res = await _promptService.deletePrompt(id);
+
+    if (res) {
+      _fetchPrompts();
+    }
   }
 
   @override
@@ -178,31 +227,13 @@ class _PromptScreenState extends State<PromptScreen> {
           showDialog(
             context: context,
             builder: (context) {
-              return AlertDialog(
-                title: const Text('Create New Prompt'),
-                content: TextField(
-                  controller: promptController,
-                  decoration: const InputDecoration(hintText: 'Enter prompt'),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: const Text('Cancel'),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      _createPrompt(promptController.text,
-                          isPublic: showPublicPrompts);
-                      Navigator.pop(context);
-                    },
-                    child: const Text('Create'),
-                  ),
-                ],
-              );
+              return StatefulBuilder(builder: (context, setState) {
+                return _buildPromptDialog(context, setState, 'create');
+              });
             },
-          );
+          ).then((result) {
+            resetDialogState();
+          });
         },
         child: const Icon(Icons.add),
       ),
@@ -286,47 +317,80 @@ class _PromptScreenState extends State<PromptScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // edit button
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () {
-                        // Edit prompt
-                        showDialog(
-                          context: context,
-                          builder: (context) {
-                            promptController.text = prompt.title;
-                            return AlertDialog(
-                              title: const Text('Edit Prompt'),
-                              content: TextField(
-                                controller: promptController,
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  child: const Text('Cancel'),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    _updatePrompt(index, promptController.text);
-                                    Navigator.pop(context);
-                                  },
-                                  child: const Text('Update'),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                      },
-                    ),
+                    if (!prompt.isPublic)
+                      IconButton(
+                        icon: const Icon(Icons.edit),
+                        onPressed: () {
+                          // Edit prompt
+                          setState(() {
+                            createPromptScope =
+                                prompt.isPublic ? 'public' : 'private';
+                            _selectedLanguage = 'English';
+                            _createPromptCategory =
+                                prompt.category[0].toUpperCase() +
+                                    prompt.category.substring(1);
+                            createPromptNameController.text = prompt.title;
+                            createPromptDescriptionController.text =
+                                prompt.description;
+                            createPromptContentController.text = prompt.content;
+                          });
+                          print(_createPromptCategory);
+                          showDialog(
+                            context: context,
+                            builder: (context) {
+                              return StatefulBuilder(
+                                  builder: (context, setState) {
+                                return _buildPromptDialog(
+                                    context, setState, 'update',
+                                    prompt: prompt);
+                              });
+                            },
+                          ).then((result) {
+                            resetDialogState();
+                          });
+                        },
+                      ),
                     // delete button
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () {
-                        // Delete prompt
-                        _deletePrompt(index);
-                      },
-                    ),
+                    if (!prompt.isPublic)
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: () {
+                          showDialog(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: dialogTitle('Delete Prompt',
+                                      color: Colors.red),
+                                  content: const Text(
+                                    'Are you sure?',
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      style: const ButtonStyle(
+                                          backgroundColor:
+                                              WidgetStatePropertyAll(
+                                                  Colors.red)),
+                                      onPressed: () {
+                                        _deletePrompt(prompt.id);
+                                        Navigator.pop(context);
+                                      },
+                                      child: const Text(
+                                        'Delete',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              });
+                        },
+                      ),
                     // favorite button
                     IconButton(
                       icon: prompt.isFavorite
@@ -346,11 +410,173 @@ class _PromptScreenState extends State<PromptScreen> {
                   ],
                 ),
                 onTap: () {
-                  widget.onIconTap(0, text: prompt.content);
+                  widget.onPromptSelect(0, text: prompt.content);
                 },
               );
             },
           ))
+      ],
+    );
+  }
+
+  Widget _buildPromptDialog(
+      BuildContext context, Function setState, String action,
+      {Prompt? prompt}) {
+    bool isCreate = action == 'create';
+    return AlertDialog(
+      title: dialogTitle(isCreate ? 'New Prompt' : 'Update Prompt'),
+      content: SizedBox(
+        width: 300,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // scope selection
+            Row(
+              children: [
+                Radio(
+                  value: 'private',
+                  groupValue: createPromptScope,
+                  onChanged: (value) {
+                    setState(() {
+                      createPromptScope = value!;
+                    });
+                  },
+                ),
+                const Text(
+                  'Private Prompt',
+                  style: TextStyle(fontSize: 12),
+                ),
+                const SizedBox(
+                  width: 16,
+                ),
+                Radio(
+                  value: 'public',
+                  groupValue: createPromptScope,
+                  onChanged: (value) {
+                    setState(() {
+                      createPromptScope = value!;
+                    });
+                  },
+                ),
+                const Text(
+                  'Public Prompt',
+                  style: TextStyle(fontSize: 12),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16.0),
+            const Text(
+              'Prompt Language',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8.0),
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+              decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300, width: 1)),
+              child: DropdownButton(
+                  focusColor: Colors.transparent,
+                  underline: Container(),
+                  value: _selectedLanguage,
+                  items: _languages.map((item) {
+                    return DropdownMenuItem(
+                        value: item,
+                        child: Text(
+                          item,
+                          style: const TextStyle(fontSize: 12),
+                        ));
+                  }).toList(),
+                  onChanged: (newValue) {
+                    setState(() {
+                      _selectedLanguage = newValue!;
+                    });
+                  }),
+            ),
+            const SizedBox(height: 16.0),
+            const Text(
+              'Name',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8.0),
+            TextField(
+              style: const TextStyle(fontSize: 12),
+              controller: createPromptNameController,
+              decoration: dialogInputField('Name of the prompt'),
+            ),
+            const SizedBox(height: 16.0),
+            const Text(
+              'Category',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8.0),
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+              decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300, width: 1)),
+              child: DropdownButton(
+                  focusColor: Colors.transparent,
+                  underline: Container(),
+                  value: _createPromptCategory,
+                  items: _categories.sublist(1).map((item) {
+                    return DropdownMenuItem(
+                        value: item,
+                        child: Text(
+                          item,
+                          style: const TextStyle(fontSize: 12),
+                        ));
+                  }).toList(),
+                  onChanged: (newValue) {
+                    setState(() {
+                      _createPromptCategory = newValue!;
+                    });
+                  }),
+            ),
+            const SizedBox(height: 16.0),
+            const Text(
+              'Description',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8.0),
+            TextField(
+              maxLines: 2,
+              style: const TextStyle(fontSize: 12),
+              controller: createPromptDescriptionController,
+              decoration: dialogInputField(
+                  'Describe your prompt to others can have a better understanding'),
+            ),
+            const SizedBox(height: 16.0),
+            const Text(
+              'Prompt',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8.0),
+            TextField(
+              maxLines: 3,
+              style: const TextStyle(fontSize: 12),
+              controller: createPromptContentController,
+              decoration: dialogInputField(
+                  'e.g: Write an article about [TOPIC] make sure to include these keyword: [KEYWORDS]'),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          style: ButtonStyle(
+              backgroundColor: WidgetStatePropertyAll(Colors.lightBlue[100])),
+          onPressed: () {
+            isCreate ? _createPrompt() : _updatePrompt(prompt!.id);
+            Navigator.pop(context);
+          },
+          child: Text(isCreate ? 'Create' : 'Update'),
+        ),
       ],
     );
   }

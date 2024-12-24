@@ -6,8 +6,10 @@ import '../models/user_model.dart'; // Import GoRouter package
 
 class Sidebar extends StatefulWidget {
   final Function(int) onIconTap;
+  final int currentIndex;
 
-  const Sidebar({super.key, required this.onIconTap});
+  const Sidebar(
+      {super.key, required this.onIconTap, required this.currentIndex});
 
   @override
   State<Sidebar> createState() => _SidebarState();
@@ -17,15 +19,16 @@ class _SidebarState extends State<Sidebar> {
   // service
   final AuthService _authService = AuthService();
 
-  // state
-  int _selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Container(
         width: 62,
-        height: MediaQuery.of(context).size.height,
+        height: MediaQuery
+            .of(context)
+            .size
+            .height,
         decoration: BoxDecoration(
           color: Colors.white,
           boxShadow: const [
@@ -105,11 +108,10 @@ class _SidebarState extends State<Sidebar> {
   }
 
   Widget _buildIcon(int index, IconData icon, String label) {
-    final bool isSelected = _selectedIndex == index;
+    final bool isSelected = widget.currentIndex == index;
 
     return GestureDetector(
       onTap: () {
-        setState(() => _selectedIndex = index);
         widget.onIconTap(index);
       },
       child: Padding(
@@ -147,7 +149,8 @@ class _SidebarState extends State<Sidebar> {
     }
 
     overlayEntry = OverlayEntry(
-        builder: (context) => Stack(
+        builder: (context) =>
+            Stack(
               children: [
                 // trans background to click outside and close overlay
                 GestureDetector(
@@ -187,7 +190,7 @@ class _SidebarState extends State<Sidebar> {
                                     SizedBox(width: 8),
                                     Column(
                                       crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           "AI Jarvis",
@@ -203,7 +206,7 @@ class _SidebarState extends State<Sidebar> {
                                 ),
                                 Padding(
                                   padding:
-                                      const EdgeInsets.symmetric(vertical: 8.0),
+                                  const EdgeInsets.symmetric(vertical: 8.0),
                                   child: GestureDetector(
                                     onTap: () {
                                       removeOverlay();
@@ -211,7 +214,7 @@ class _SidebarState extends State<Sidebar> {
                                     },
                                     child: const Row(
                                       mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
+                                      MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text("Account & Billing"),
                                         Icon(Icons.chevron_right),
@@ -233,11 +236,11 @@ class _SidebarState extends State<Sidebar> {
                                       },
                                       child: const Row(
                                         mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
+                                        MainAxisAlignment.spaceBetween,
                                         children: [
                                           Text("Sign Out",
                                               style:
-                                                  TextStyle(color: Colors.red)),
+                                              TextStyle(color: Colors.red)),
                                           Icon(Icons.chevron_right),
                                         ],
                                       ),

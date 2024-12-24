@@ -40,9 +40,11 @@ class _HomePageState extends State<HomePage> {
       ChatScreen(
         inputText: _inputText,
       ),
-      const BotManagementScreen(),
+      BotManagementScreen(
+        onBotSelect: _onIconTap,
+      ),
       PromptScreen(
-        onIconTap: _onIconTap,
+        onPromptSelect: _onIconTap,
       ),
       const KnowledgeBaseScreen(),
     ];
@@ -58,6 +60,7 @@ class _HomePageState extends State<HomePage> {
           // Sidebar on the right
           Sidebar(
             onIconTap: _onIconTap,
+            currentIndex: _currentIndex,
           ),
         ],
       ),

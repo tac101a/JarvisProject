@@ -217,6 +217,69 @@ final class ApiService {
     }
   }
 
+  // create new prompt
+  Future<http.Response> createPrompt(Map<String, dynamic> data) async {
+    // url
+    var url = baseURL + promptEndpoints['createPrompt']!;
+
+    // request
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${User.refreshToken}'
+        },
+        body: json.encode(data),
+      );
+      return response;
+    } catch (e) {
+      throw Exception('Request Failed: $e');
+    }
+  }
+
+  // delete prompt
+  Future<http.Response> deletePrompt(String id) async {
+    // url
+    var url = baseURL + promptEndpoints['deletePrompt']!;
+
+    // request
+    try {
+      final response = await http.delete(
+        Uri.parse('$url$id'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${User.refreshToken}'
+        },
+      );
+      return response;
+    } catch (e) {
+      throw Exception('Request Failed: $e');
+    }
+  }
+
+  // update prompt
+  Future<http.Response> updatePrompt(
+      String id, Map<String, dynamic> data) async {
+    // url
+    var url = baseURL + promptEndpoints['updatePrompt']!;
+
+    // request
+    try {
+      final response = await http.patch(
+        Uri.parse('$url$id'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${User.refreshToken}'
+        },
+        body: json.encode(data),
+      );
+      return response;
+    } catch (e) {
+      throw Exception('Request Failed: $e');
+    }
+  }
+
   // ---------- assistant ----------
   Future<http.Response> kbSignIn() async {
     // url

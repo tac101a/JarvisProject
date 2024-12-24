@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'api_service.dart';
 
 class PromptService {
@@ -10,7 +12,7 @@ class PromptService {
     try {
       Map<String, String> param = {
         if (query != null && query.isNotEmpty) 'query': query,
-        if (category != null) 'category': category,
+        if (category != null) 'category': category.toLowerCase(),
         if (isFavorite != null) 'isFavorite': isFavorite.toString(),
         if (isPublic != null) 'isPublic': isPublic.toString()
       };
@@ -49,6 +51,85 @@ class PromptService {
       final response = await apiService.removeFromFavorite(id);
 
       if (response.statusCode == 200) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      throw Exception(e);
+    }
+  }
+
+  // create new prompt
+  Future<bool> createPrompt(
+      {required String title,
+      required String language,
+      required String category,
+      required bool isPublic,
+      required String description,
+      required String content}) async {
+    try {
+      final response = await apiService.createPrompt({
+        'title': title,
+        'language': language,
+        'category': category.toLowerCase(),
+        'isPublic': isPublic,
+        'description': description,
+        'content': content,
+      });
+
+      var data = json.decode(response.body);
+      print(data);
+
+      if (response.statusCode == 201) {
+        print('create prompt success');
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      throw Exception(e);
+    }
+  }
+
+  // delete prompt
+  Future<bool> deletePrompt(String id) async {
+    try {
+      final response = await apiService.deletePrompt(id);
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      throw Exception(e);
+    }
+  }
+
+  // update prompt
+  Future<bool> updatePrompt(String id,
+      {required String title,
+      required String language,
+      required String category,
+      required bool isPublic,
+      required String description,
+      required String content}) async {
+    try {
+      final response = await apiService.updatePrompt(id, {
+        'title': title,
+        'language': language,
+        'category': category.toLowerCase(),
+        'isPublic': isPublic,
+        'description': description,
+        'content': content,
+      });
+
+      var data = json.decode(response.body);
+      print(data);
+
+      if (response.statusCode == 200) {
+        print('update prompt success');
         return true;
       } else {
         return false;
