@@ -32,12 +32,10 @@ class _PromptScreenState extends State<PromptScreen> {
   String _createPromptCategory = 'Other';
 
   // text field controller
-  TextEditingController promptController = TextEditingController();
   TextEditingController searchBarController = TextEditingController();
-  TextEditingController createPromptNameController = TextEditingController();
-  TextEditingController createPromptDescriptionController =
-      TextEditingController();
-  TextEditingController createPromptContentController = TextEditingController();
+  TextEditingController dialogNameController = TextEditingController();
+  TextEditingController dialogDescriptionController = TextEditingController();
+  TextEditingController dialogContentController = TextEditingController();
 
   // categories
   final List<String> _categories = [
@@ -84,9 +82,10 @@ class _PromptScreenState extends State<PromptScreen> {
   @override
   void dispose() {
     super.dispose();
-    promptController.dispose();
     searchBarController.dispose();
-    createPromptNameController.dispose();
+    dialogNameController.dispose();
+    dialogDescriptionController.dispose();
+    dialogContentController.dispose();
   }
 
   void resetDialogState() {
@@ -94,9 +93,9 @@ class _PromptScreenState extends State<PromptScreen> {
       createPromptScope = 'private';
       _selectedLanguage = 'English';
       _createPromptCategory = 'Other';
-      createPromptNameController.text = '';
-      createPromptDescriptionController.text = '';
-      createPromptContentController.text = '';
+      dialogNameController.text = '';
+      dialogDescriptionController.text = '';
+      dialogContentController.text = '';
     });
   }
 
@@ -160,12 +159,12 @@ class _PromptScreenState extends State<PromptScreen> {
 
   Future<void> _createPrompt() async {
     var res = await _promptService.createPrompt(
-        title: createPromptNameController.text,
+        title: dialogNameController.text,
         language: _selectedLanguage,
         category: _createPromptCategory,
         isPublic: createPromptScope == 'public',
-        description: createPromptDescriptionController.text,
-        content: createPromptContentController.text);
+        description: dialogDescriptionController.text,
+        content: dialogContentController.text);
 
     if (res) {
       _fetchPrompts();
@@ -174,12 +173,12 @@ class _PromptScreenState extends State<PromptScreen> {
 
   Future<void> _updatePrompt(String id) async {
     var res = await _promptService.updatePrompt(id,
-        title: createPromptNameController.text,
+        title: dialogNameController.text,
         language: _selectedLanguage,
         category: _createPromptCategory,
         isPublic: createPromptScope == 'public',
-        description: createPromptDescriptionController.text,
-        content: createPromptContentController.text);
+        description: dialogDescriptionController.text,
+        content: dialogContentController.text);
 
     if (res) {
       _fetchPrompts();
@@ -228,7 +227,7 @@ class _PromptScreenState extends State<PromptScreen> {
             context: context,
             builder: (context) {
               return StatefulBuilder(builder: (context, setState) {
-                return _buildPromptDialog(context, setState, 'create');
+                return _buildDialog(context, setState, 'create');
               });
             },
           ).then((result) {
@@ -305,14 +304,22 @@ class _PromptScreenState extends State<PromptScreen> {
           )),
         if (!isLoading && prompts.isNotEmpty)
           Flexible(
-              child: ListView.builder(
+              child: ListView.separated(
             shrinkWrap: true,
             itemCount: prompts.length,
             itemBuilder: (context, index) {
               final prompt = prompts[index];
 
               return ListTile(
-                title: Text(prompt.title),
+                title: Text(
+                  prompt.title,
+                  style: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text(
+                  prompt.description,
+                  style: const TextStyle(fontSize: 12),
+                ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -329,19 +336,18 @@ class _PromptScreenState extends State<PromptScreen> {
                             _createPromptCategory =
                                 prompt.category[0].toUpperCase() +
                                     prompt.category.substring(1);
-                            createPromptNameController.text = prompt.title;
-                            createPromptDescriptionController.text =
+                            dialogNameController.text = prompt.title;
+                            dialogDescriptionController.text =
                                 prompt.description;
-                            createPromptContentController.text = prompt.content;
+                            dialogContentController.text = prompt.content;
                           });
-                          print(_createPromptCategory);
+
                           showDialog(
                             context: context,
                             builder: (context) {
                               return StatefulBuilder(
                                   builder: (context, setState) {
-                                return _buildPromptDialog(
-                                    context, setState, 'update',
+                                return _buildDialog(context, setState, 'update',
                                     prompt: prompt);
                               });
                             },
@@ -410,8 +416,26 @@ class _PromptScreenState extends State<PromptScreen> {
                   ],
                 ),
                 onTap: () {
-                  widget.onPromptSelect(0, text: prompt.content);
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      return StatefulBuilder(builder: (context, setState) {
+                        return _buildDialog(context, setState, 'view',
+                            prompt: prompt);
+                      });
+                    },
+                  ).then((result) {
+                    resetDialogState();
+                  });
                 },
+              );
+            },
+            separatorBuilder: (context, index) {
+              return Divider(
+                color: Colors.grey.shade300,
+                thickness: 0.5,
+                indent: 16,
+                endIndent: 16,
               );
             },
           ))
@@ -419,146 +443,194 @@ class _PromptScreenState extends State<PromptScreen> {
     );
   }
 
-  Widget _buildPromptDialog(
-      BuildContext context, Function setState, String action,
+  Widget _buildDialog(BuildContext context, Function setState, String action,
       {Prompt? prompt}) {
-    bool isCreate = action == 'create';
+    bool isViewing = action == 'view';
+
+    String title = '';
+    String submitText = '';
+    Function onSubmit = () {};
+
+    switch (action) {
+      case 'create':
+        title = 'New Prompt';
+        dialogDescriptionController.text = '';
+        dialogContentController.text = '';
+        submitText = 'Create';
+        onSubmit = _createPrompt;
+        break;
+
+      case 'update':
+        title = 'Update Prompt';
+        dialogDescriptionController.text = prompt!.description;
+        dialogContentController.text = prompt.content;
+        submitText = 'Update';
+        onSubmit = () {
+          _updatePrompt(prompt.id);
+        };
+        break;
+
+      case 'view':
+        title = prompt!.title;
+        dialogDescriptionController.text = prompt.description;
+        dialogContentController.text = prompt.content;
+        submitText = 'Use prompt';
+        onSubmit = () {
+          widget.onPromptSelect(0, text: prompt.content);
+        };
+        break;
+    }
+
     return AlertDialog(
-      title: dialogTitle(isCreate ? 'New Prompt' : 'Update Prompt'),
-      content: SizedBox(
-        width: 300,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // scope selection
-            Row(
+      title: dialogTitle(title),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 480),
+        child: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.8,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Radio(
-                  value: 'private',
-                  groupValue: createPromptScope,
-                  onChanged: (value) {
-                    setState(() {
-                      createPromptScope = value!;
-                    });
-                  },
+                if (!isViewing) ...[
+                  // scope selection
+                  Row(
+                    children: [
+                      Radio(
+                        value: 'private',
+                        groupValue: createPromptScope,
+                        onChanged: (value) {
+                          setState(() {
+                            createPromptScope = value!;
+                          });
+                        },
+                      ),
+                      const Text(
+                        'Private Prompt',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                      const SizedBox(
+                        width: 16,
+                      ),
+                      Radio(
+                        value: 'public',
+                        groupValue: createPromptScope,
+                        onChanged: (value) {
+                          setState(() {
+                            createPromptScope = value!;
+                          });
+                        },
+                      ),
+                      const Text(
+                        'Public Prompt',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16.0),
+                  const Text(
+                    'Prompt Language',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8.0),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+                    decoration: BoxDecoration(
+                        border:
+                            Border.all(color: Colors.grey.shade300, width: 1)),
+                    child: DropdownButton(
+                        focusColor: Colors.transparent,
+                        underline: Container(),
+                        value: _selectedLanguage,
+                        items: _languages.map((item) {
+                          return DropdownMenuItem(
+                              value: item,
+                              child: Text(
+                                item,
+                                style: const TextStyle(fontSize: 12),
+                              ));
+                        }).toList(),
+                        onChanged: (newValue) {
+                          setState(() {
+                            _selectedLanguage = newValue!;
+                          });
+                        }),
+                  ),
+                  const SizedBox(height: 16.0),
+                  const Text(
+                    'Name',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8.0),
+                  TextField(
+                    style: const TextStyle(fontSize: 12),
+                    controller: dialogNameController,
+                    decoration: dialogInputField('Name of the prompt'),
+                  ),
+                  const SizedBox(height: 16.0),
+                  const Text(
+                    'Category',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8.0),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+                    decoration: BoxDecoration(
+                        border:
+                            Border.all(color: Colors.grey.shade300, width: 1)),
+                    child: DropdownButton(
+                        focusColor: Colors.transparent,
+                        underline: Container(),
+                        value: _createPromptCategory,
+                        items: _categories.sublist(1).map((item) {
+                          return DropdownMenuItem(
+                              value: item,
+                              child: Text(
+                                item,
+                                style: const TextStyle(fontSize: 12),
+                              ));
+                        }).toList(),
+                        onChanged: (newValue) {
+                          setState(() {
+                            _createPromptCategory = newValue!;
+                          });
+                        }),
+                  ),
+                  const SizedBox(height: 16.0),
+                  const Text(
+                    'Description',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8.0),
+                ],
+                TextField(
+                  maxLines: isViewing ? null : 2,
+                  style: const TextStyle(fontSize: 12, color: Colors.black),
+                  controller: dialogDescriptionController,
+                  readOnly: isViewing,
+                  enabled: !isViewing,
+                  decoration: dialogInputField(
+                      'Describe your prompt to others can have a better understanding'),
                 ),
+                const SizedBox(height: 16.0),
                 const Text(
-                  'Private Prompt',
-                  style: TextStyle(fontSize: 12),
+                  'Prompt',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(
-                  width: 16,
-                ),
-                Radio(
-                  value: 'public',
-                  groupValue: createPromptScope,
-                  onChanged: (value) {
-                    setState(() {
-                      createPromptScope = value!;
-                    });
-                  },
-                ),
-                const Text(
-                  'Public Prompt',
-                  style: TextStyle(fontSize: 12),
+                const SizedBox(height: 8.0),
+                TextField(
+                  maxLines: isViewing ? 10 : 3,
+                  style: const TextStyle(fontSize: 12, color: Colors.black),
+                  controller: dialogContentController,
+                  readOnly: isViewing,
+                  decoration: dialogInputField(
+                      'e.g: Write an article about [TOPIC] make sure to include these keyword: [KEYWORDS]'),
                 ),
               ],
             ),
-            const SizedBox(height: 16.0),
-            const Text(
-              'Prompt Language',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8.0),
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 8),
-              decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300, width: 1)),
-              child: DropdownButton(
-                  focusColor: Colors.transparent,
-                  underline: Container(),
-                  value: _selectedLanguage,
-                  items: _languages.map((item) {
-                    return DropdownMenuItem(
-                        value: item,
-                        child: Text(
-                          item,
-                          style: const TextStyle(fontSize: 12),
-                        ));
-                  }).toList(),
-                  onChanged: (newValue) {
-                    setState(() {
-                      _selectedLanguage = newValue!;
-                    });
-                  }),
-            ),
-            const SizedBox(height: 16.0),
-            const Text(
-              'Name',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8.0),
-            TextField(
-              style: const TextStyle(fontSize: 12),
-              controller: createPromptNameController,
-              decoration: dialogInputField('Name of the prompt'),
-            ),
-            const SizedBox(height: 16.0),
-            const Text(
-              'Category',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8.0),
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 8),
-              decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300, width: 1)),
-              child: DropdownButton(
-                  focusColor: Colors.transparent,
-                  underline: Container(),
-                  value: _createPromptCategory,
-                  items: _categories.sublist(1).map((item) {
-                    return DropdownMenuItem(
-                        value: item,
-                        child: Text(
-                          item,
-                          style: const TextStyle(fontSize: 12),
-                        ));
-                  }).toList(),
-                  onChanged: (newValue) {
-                    setState(() {
-                      _createPromptCategory = newValue!;
-                    });
-                  }),
-            ),
-            const SizedBox(height: 16.0),
-            const Text(
-              'Description',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8.0),
-            TextField(
-              maxLines: 2,
-              style: const TextStyle(fontSize: 12),
-              controller: createPromptDescriptionController,
-              decoration: dialogInputField(
-                  'Describe your prompt to others can have a better understanding'),
-            ),
-            const SizedBox(height: 16.0),
-            const Text(
-              'Prompt',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8.0),
-            TextField(
-              maxLines: 3,
-              style: const TextStyle(fontSize: 12),
-              controller: createPromptContentController,
-              decoration: dialogInputField(
-                  'e.g: Write an article about [TOPIC] make sure to include these keyword: [KEYWORDS]'),
-            ),
-          ],
+          ),
         ),
       ),
       actions: [
@@ -572,10 +644,10 @@ class _PromptScreenState extends State<PromptScreen> {
           style: ButtonStyle(
               backgroundColor: WidgetStatePropertyAll(Colors.lightBlue[100])),
           onPressed: () {
-            isCreate ? _createPrompt() : _updatePrompt(prompt!.id);
+            onSubmit();
             Navigator.pop(context);
           },
-          child: Text(isCreate ? 'Create' : 'Update'),
+          child: Text(submitText),
         ),
       ],
     );

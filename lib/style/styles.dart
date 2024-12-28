@@ -49,20 +49,23 @@ const Color primaryBlue = Color.fromARGB(255, 20, 80, 165);
 
 InputDecoration dialogInputField(String hintText) {
   return InputDecoration(
-      hintText: hintText,
-      hintStyle: const TextStyle(color: Colors.grey),
-      enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(
-            color: Colors.grey.shade300,
-            width: 1,
-          ),
-          borderRadius: BorderRadius.zero),
-      focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(
-            color: Colors.grey.shade300,
-            width: 1,
-          ),
-          borderRadius: BorderRadius.zero));
+    hintText: hintText,
+    hintStyle: const TextStyle(color: Colors.grey),
+    isDense: true,
+    enabledBorder: OutlineInputBorder(
+        borderSide: BorderSide(
+          color: Colors.grey.shade300,
+          width: 1,
+        ),
+        borderRadius: BorderRadius.zero),
+    disabledBorder: InputBorder.none,
+    focusedBorder: OutlineInputBorder(
+        borderSide: BorderSide(
+          color: Colors.grey.shade300,
+          width: 1,
+        ),
+        borderRadius: BorderRadius.zero),
+  );
 }
 
 Text dialogTitle(String text, {Color? color}) {

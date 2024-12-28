@@ -24,5 +24,18 @@ const promptEndpoints = {
 const aiEndpoints = {
   'kbSignIn': '/kb-core/v1/auth/external-sign-in',
   'getAssistant': '/kb-core/v1/ai-assistant',
-  'createAssistant': '/kb-core/v1/ai-assistant'
+  'createAssistant': '/kb-core/v1/ai-assistant',
+  'deleteAssistant': '/kb-core/v1/ai-assistant/',
+  'updateAssistant': '/kb-core/v1/ai-assistant/',
+  'getThread': '/kb-core/v1/ai-assistant/',
+  'createThread': '/kb-core/v1/ai-assistant/thread',
+  'getMessages': '/kb-core/v1/ai-assistant/thread/',
+  'chat': '/kb-core/v1/ai-assistant/',
+};
+
+const kbEndpoints = {
+  'getKnowledge': '/kb-core/v1/knowledge',
+  'createKnowledge': '/kb-core/v1/knowledge',
+  'deleteKnowledge': '/kb-core/v1/knowledge/',
+  'updateKnowledge': '/kb-core/v1/knowledge/'
 };

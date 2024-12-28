@@ -281,6 +281,7 @@ final class ApiService {
   }
 
   // ---------- assistant ----------
+  // kb authorization
   Future<http.Response> kbSignIn() async {
     // url
     var url = kbURL + aiEndpoints['kbSignIn']!;
@@ -296,6 +297,7 @@ final class ApiService {
     }
   }
 
+  // get all ai bot
   Future<http.Response> getAssistant(Map<String, String> param) async {
     // url
     var url = kbURL + aiEndpoints['getAssistant']!;
@@ -307,6 +309,230 @@ final class ApiService {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${User.kbAccessToken}'
       });
+      return response;
+    } catch (e) {
+      throw Exception('Request Failed: $e');
+    }
+  }
+
+  // create assistant
+  Future<http.Response> createAssistant(Map<String, dynamic> data) async {
+    // url
+    var url = kbURL + aiEndpoints['createAssistant']!;
+
+    // request
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${User.kbAccessToken}'
+        },
+        body: json.encode(data),
+      );
+      return response;
+    } catch (e) {
+      throw Exception('Request Failed: $e');
+    }
+  }
+
+  // delete assistant
+  Future<http.Response> deleteAssistant(String id) async {
+    // url
+    var url = kbURL + aiEndpoints['deleteAssistant']!;
+
+    // request
+    try {
+      final response = await http.delete(
+        Uri.parse('$url$id'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${User.kbAccessToken}'
+        },
+      );
+      return response;
+    } catch (e) {
+      throw Exception('Request Failed: $e');
+    }
+  }
+
+  // update assistant
+  Future<http.Response> updateAssistant(
+      String id, Map<String, dynamic> data) async {
+    // url
+    var url = kbURL + aiEndpoints['updateAssistant']!;
+
+    // request
+    try {
+      final response = await http.patch(
+        Uri.parse('$url$id'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${User.kbAccessToken}'
+        },
+        body: json.encode(data),
+      );
+      return response;
+    } catch (e) {
+      throw Exception('Request Failed: $e');
+    }
+  }
+
+  // create thread
+  Future<http.Response> createThread(Map<String, dynamic> data) async {
+    // url
+    var url = kbURL + aiEndpoints['createThread']!;
+
+    // request
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${User.kbAccessToken}'
+        },
+        body: json.encode(data),
+      );
+      return response;
+    } catch (e) {
+      throw Exception('Request Failed: $e');
+    }
+  }
+
+  // get all threads
+  Future<http.Response> getAllThreads(String id) async {
+    // url
+    var url = kbURL + aiEndpoints['getThread']!;
+
+    // request
+    try {
+      final response = await http.get(
+          Uri.parse('$url$id/threads').replace(
+              queryParameters: {'order': 'DESC', 'order_field': 'createdAt'}),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ${User.kbAccessToken}'
+          });
+      return response;
+    } catch (e) {
+      throw Exception('Request Failed: $e');
+    }
+  }
+
+  // get thread messages
+  Future<http.Response> getThreadMessages(String id) async {
+    // url
+    var url = kbURL + aiEndpoints['getMessages']!;
+
+    // request
+    try {
+      final response = await http.get(Uri.parse('$url$id/messages'), headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${User.kbAccessToken}'
+      });
+      return response;
+    } catch (e) {
+      throw Exception('Request Failed: $e');
+    }
+  }
+
+  // ask assistant
+  Future<http.Response> askAssistant(
+      String id, Map<String, dynamic> data) async {
+    // url
+    var url = kbURL + aiEndpoints['chat']!;
+
+    // request
+    try {
+      final response = await http.post(
+        Uri.parse('$url$id/ask'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${User.kbAccessToken}'
+        },
+        body: json.encode(data),
+      );
+      return response;
+    } catch (e) {
+      throw Exception('Request Failed: $e');
+    }
+  }
+
+  // ---------- Knowledge base ----------
+  // get all ai bot
+  Future<http.Response> getKnowledge() async {
+    // url
+    var url = kbURL + kbEndpoints['getKnowledge']!;
+
+    // request
+    try {
+      final response = await http.get(Uri.parse(url), headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${User.kbAccessToken}'
+      });
+      return response;
+    } catch (e) {
+      throw Exception('Request Failed: $e');
+    }
+  }
+
+  // create assistant
+  Future<http.Response> createKnowledge(Map<String, dynamic> data) async {
+    // url
+    var url = kbURL + kbEndpoints['createKnowledge']!;
+
+    // request
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${User.kbAccessToken}'
+        },
+        body: json.encode(data),
+      );
+      return response;
+    } catch (e) {
+      throw Exception('Request Failed: $e');
+    }
+  }
+
+  // delete assistant
+  Future<http.Response> deleteKnowledge(String id) async {
+    // url
+    var url = kbURL + kbEndpoints['deleteKnowledge']!;
+
+    // request
+    try {
+      final response = await http.delete(
+        Uri.parse('$url$id'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${User.kbAccessToken}'
+        },
+      );
+      return response;
+    } catch (e) {
+      throw Exception('Request Failed: $e');
+    }
+  }
+
+  // update assistant
+  Future<http.Response> updateKnowledge(
+      String id, Map<String, dynamic> data) async {
+    // url
+    var url = kbURL + kbEndpoints['updateKnowledge']!;
+
+    // request
+    try {
+      final response = await http.patch(
+        Uri.parse('$url$id'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${User.kbAccessToken}'
+        },
+        body: json.encode(data),
+      );
       return response;
     } catch (e) {
       throw Exception('Request Failed: $e');

@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:jarvis_project/components/error_modal.dart';
 import 'package:jarvis_project/models/assistant_model.dart';
 import 'package:jarvis_project/models/conversation_model.dart';
-import 'package:jarvis_project/models/message.dart';
-import 'package:jarvis_project/models/user_model.dart';
+import 'package:jarvis_project/models/message_model.dart';
+import 'package:jarvis_project/models/thread_model.dart';
+import 'package:jarvis_project/services/assistant_service.dart';
 import 'package:jarvis_project/services/chat_service.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -19,6 +21,7 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   // service
   final ChatService _chatService = ChatService();
+  final AssistantService _assistantService = AssistantService();
 
   // state
   List<dynamic> conList = [];
@@ -26,6 +29,7 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isLoading = true;
   int _selectedConIndex = -1;
   bool _isTextInputFocus = false;
+  bool isBuiltinBot = Assistant.currentBot.type == 'builtin';
 
   // text field control
   final FocusNode _focusNode = FocusNode();
@@ -54,18 +58,32 @@ class _ChatScreenState extends State<ChatScreen> {
 
   // get all conversation
   Future<void> _getConList() async {
-    conList.clear();
-    var response = await _chatService.getAllConversations();
-    final Map<String, dynamic> data = json.decode(response);
+    try {
+      conList.clear();
+      List<dynamic> temp = [];
 
-    List<dynamic> temp = [];
-    for (var item in data['items']) {
-      temp.add(Conversation(item['id'], item['title']));
+      if (isBuiltinBot) {
+        var response = await _chatService.getAllConversations();
+        final Map<String, dynamic> data = json.decode(response);
+
+        for (var item in data['items']) {
+          temp.add(Conversation(item['id'], item['title']));
+        }
+      } else {
+        var response = await _assistantService.getAllThreads();
+        final Map<String, dynamic> data = json.decode(response);
+
+        for (var item in data['data']) {
+          temp.add(Thread(
+              item['openAiThreadId'], item['assistantId'], item['threadName']));
+        }
+      }
+      setState(() {
+        conList = temp;
+      });
+    } catch (e) {
+      showErrorModal(context, e.toString());
     }
-
-    setState(() {
-      conList = temp;
-    });
   }
 
   void init() async {
@@ -82,16 +100,33 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _getMessages() async {
     if (_selectedConIndex != -1) {
       try {
-        var conversation = conList[_selectedConIndex];
-        var response = await _chatService.loadConversation(conversation.id);
-        final Map<String, dynamic> data = json.decode(response);
+        if (isBuiltinBot) {
+          // builtin bot
+          var conversation = conList[_selectedConIndex];
+          var response = await _chatService.loadConversation(conversation.id);
+          final Map<String, dynamic> data = json.decode(response);
 
-        // get messages
-        List<dynamic> items = data['items'];
-        for (var item in items) {
-          messages.insert(0, Message('user', item['createdAt'], item['query']));
-          messages.insert(
-              0, Message('assistant', item['createdAt'], item['answer']));
+          // get messages
+          List<dynamic> items = data['items'];
+          for (var item in items) {
+            messages.insert(
+                0, Message('user', item['createdAt'], item['query']));
+            messages.insert(
+                0, Message('assistant', item['createdAt'], item['answer']));
+          }
+        } else {
+          // custom bot
+          var conversation = conList[_selectedConIndex];
+          var response = await _assistantService
+              .getThreadMessages(conversation.openAiThreadId);
+          final List<dynamic> data = json.decode(response);
+
+          // get messages
+          List<dynamic> items = data;
+          for (var item in items) {
+            messages.add(Message(item['role'], item['createdAt'],
+                item['content'][0]['text']['value']));
+          }
         }
       } catch (e) {
         print(e);
@@ -106,8 +141,6 @@ class _ChatScreenState extends State<ChatScreen> {
     // if input text is not empty
     var content = _controller.text;
     if (content.isNotEmpty) {
-      // if _selectedConIndex = -1 then create new conversation
-      var conID = _selectedConIndex != -1 ? conList[_selectedConIndex].id : '';
       try {
         int timestamp = DateTime.now().millisecondsSinceEpoch;
         setState(() {
@@ -121,23 +154,58 @@ class _ChatScreenState extends State<ChatScreen> {
           messages.insert(0, Message('assistant', timestamp, '...'));
         });
 
-        var response = await _chatService.sendMessage(
-            content, Assistant.currentBot.id, conID);
-        var data = json.decode(response);
-        setState(() {
-          // replace ... with the reply message
-          messages.removeAt(0);
-          messages.insert(0, Message('assistant', timestamp, data['message']));
-        });
+        if (isBuiltinBot) {
+          // if _selectedConIndex = -1 then create new conversation
+          var conID =
+              _selectedConIndex != -1 ? conList[_selectedConIndex].id : '';
 
-        print(data['remainingUsage']);
+          var response = await _chatService.sendMessage(
+              content, Assistant.currentBot.id, conID);
+          var data = json.decode(response);
+          setState(() {
+            // replace ... with the reply message
+            messages.removeAt(0);
+            messages.insert(
+                0, Message('assistant', timestamp, data['message']));
+          });
 
-        // if create new conversation
-        if (conID.isEmpty) {
-          // create new conversation and reload conversation
-          setState(() async {
-            await _getConList();
-            _selectedConIndex = 0;
+          // if create new conversation
+          if (conID.isEmpty) {
+            // create new conversation and reload conversation
+            setState(() async {
+              await _getConList();
+              _selectedConIndex = 0;
+            });
+          }
+        } else {
+          // create new thread
+          if (_selectedConIndex == -1) {
+            var isCreated = await _assistantService.createThread(
+              id: Assistant.currentBot.id,
+              message: content,
+            );
+
+            if (isCreated) {
+              setState(() async {
+                await _getConList();
+                _selectedConIndex = 0;
+              });
+            } else {
+              throw Exception('Request failed');
+            }
+          }
+
+          Thread thread = conList[_selectedConIndex];
+          var response = await _assistantService.askAssistant(
+              assistantId: thread.assistantId,
+              threadId: thread.openAiThreadId,
+              message: content);
+
+          print(response.toString());
+          setState(() {
+            // replace ... with the reply message
+            messages.removeAt(0);
+            messages.insert(0, Message('assistant', timestamp, response));
           });
         }
       } catch (e) {
@@ -150,7 +218,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(Assistant.currentBot.name!),
+        title: Text(Assistant.currentBot.name),
       ),
       drawer: Drawer(
         child: SafeArea(
@@ -192,7 +260,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   return ListTile(
                     // set background color for selected item
                     tileColor: isSelected ? Colors.blue.withOpacity(0.2) : null,
-                    title: Text(item.title),
+                    title: Text(isBuiltinBot ? item.title : item.threadName),
                     onTap: () async {
                       Navigator.of(context).pop(); // close Drawer
                       setState(() {
@@ -344,7 +412,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     Expanded(
                       child: TextField(
                         minLines: 1,
-                        maxLines: 3,
+                        maxLines: 6,
                         style: const TextStyle(fontSize: 14.0),
                         focusNode: _focusNode,
                         textInputAction: TextInputAction.done,

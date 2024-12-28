@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 Widget searchBar(
     {TextEditingController? controller,
@@ -16,7 +15,7 @@ Widget searchBar(
     child: Row(
       children: [
         const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 0),
+          padding: EdgeInsets.only(left: 12),
           child: Icon(
             Icons.search, // search icon
             color: Colors.grey,
@@ -26,10 +25,11 @@ Widget searchBar(
           child: TextField(
             controller: controller,
             decoration: InputDecoration(
-              contentPadding:
-                  const EdgeInsets.symmetric(vertical: 0, horizontal: 0),
+              isDense: true,
+              contentPadding: const EdgeInsets.all(10),
               hintText: hintText,
-              border: InputBorder.none, // remove text field border
+              border: InputBorder.none,
+              // remove text field border
               hintStyle: const TextStyle(color: Colors.grey),
             ),
             onSubmitted: (value) {

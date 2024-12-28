@@ -6,9 +6,9 @@ import 'package:jarvis_project/services/assistant_service.dart';
 
 import '../components/error_modal.dart';
 import '../components/search_bar.dart';
+import '../style/styles.dart';
 
 class BotManagementScreen extends StatefulWidget {
-
   final Function(int, {String text}) onBotSelect;
 
   const BotManagementScreen({super.key, required this.onBotSelect});
@@ -20,6 +20,11 @@ class BotManagementScreen extends StatefulWidget {
 class _BotManagementScreenState extends State<BotManagementScreen> {
   // service
   final AssistantService _assistantService = AssistantService();
+
+  // text field controller
+  TextEditingController dialogNameController = TextEditingController();
+  TextEditingController dialogInstructionController = TextEditingController();
+  TextEditingController dialogDescriptionController = TextEditingController();
 
   // util
   // Predefined bots (from assistant_model.dart)
@@ -53,9 +58,12 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
   void dispose() {
     super.dispose();
     searchBarController.dispose();
+    dialogNameController.dispose();
+    dialogInstructionController.dispose();
+    dialogDescriptionController.dispose();
   }
 
-  Future<void> _getBots({String? query}) async {
+  Future<void> _getBots() async {
     try {
       setState(() {
         isLoading = true;
@@ -69,18 +77,74 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
         temp.add(Assistant(
             id: item['id'],
             name: item['assistantName'],
-            instructions: item['instructions'],
+            type: 'custom',
+            instruction: item['instructions'],
             description: item['description']));
       }
 
       setState(() {
         customBots = temp;
         isLoading = false;
+
+        if (_selectedType == 1) showingList = customBots;
       });
     } catch (e) {
       showErrorModal(context, e.toString());
       print(e);
     }
+  }
+
+  Future<void> _createBot() async {
+    var res = await _assistantService.createAssistant(
+        name: dialogNameController.text,
+        instructions: dialogInstructionController.text,
+        description: dialogDescriptionController.text);
+
+    if (res) {
+      print('deleted');
+      _getBots();
+    }
+  }
+
+  Future<void> _updateBot(String id) async {
+    var res = await _assistantService.updateAssistant(
+      id,
+      name: dialogNameController.text,
+      instructions: dialogInstructionController.text,
+      description: dialogDescriptionController.text,
+    );
+
+    if (res) {
+      _getBots();
+    }
+  }
+
+  Future<void> _deleteBot(String id) async {
+    try {
+      setState(() {
+        isLoading = true;
+      });
+      var res = await _assistantService.deleteAssistant(id);
+
+      if (res) {
+        _getBots();
+      } else {
+        setState(() {
+          isLoading = false;
+        });
+        throw Exception('Request failed');
+      }
+    } catch (e) {
+      showErrorModal(context, e.toString());
+    }
+  }
+
+  void resetDialogState() {
+    setState(() {
+      dialogNameController.text = '';
+      dialogInstructionController.text = '';
+      dialogDescriptionController.text = '';
+    });
   }
 
   @override
@@ -93,6 +157,16 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           // Add new bot
+          showDialog(
+            context: context,
+            builder: (context) {
+              return StatefulBuilder(builder: (context, setState) {
+                return _buildDialog(context, setState, 'create');
+              });
+            },
+          ).then((result) {
+            resetDialogState();
+          });
         },
         child: const Icon(Icons.add),
       ),
@@ -186,33 +260,95 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
                       radius: 13,
                       backgroundImage: AssetImage(bot.image),
                     ),
-                    // trailing: Row(
-                    //   mainAxisSize: MainAxisSize.min,
-                    //   children: [
-                    //     // edit button
-                    //     IconButton(
-                    //       icon: const Icon(Icons.edit),
-                    //       onPressed: () {
-                    //         // TODO: edit bot
-                    //       },
-                    //     ),
-                    //     // delete button
-                    //     IconButton(
-                    //       icon: const Icon(Icons.delete),
-                    //       onPressed: () {
-                    //         // TODO: delete list
-                    //       },
-                    //     ),
-                    //     // favorite button
-                    //   ],
-                    // ),
-                    onTap: () {
-                      // TODO: select bot
-                      // change selected ai
-                      Assistant.currentBot = bot;
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // edit button
+                        if (_selectedType == 1)
+                          IconButton(
+                            icon: const Icon(Icons.edit),
+                            onPressed: () {
+                              // Edit prompt
+                              setState(() {
+                                dialogNameController.text = bot.name;
+                                dialogInstructionController.text =
+                                    bot.instruction;
+                                dialogDescriptionController.text =
+                                    bot.description;
+                              });
 
-                      // switch to chat screen
-                      widget.onBotSelect(0);
+                              showDialog(
+                                context: context,
+                                builder: (context) {
+                                  return StatefulBuilder(
+                                      builder: (context, setState) {
+                                        return _buildDialog(
+                                            context, setState, 'update',
+                                            assistant: bot);
+                                      });
+                                },
+                              ).then((result) {
+                                resetDialogState();
+                              });
+                            },
+                          ),
+                        // delete button
+                        if (_selectedType == 1)
+                          IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed: () {
+                              showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return AlertDialog(
+                                      title: dialogTitle('Delete Prompt',
+                                          color: Colors.red),
+                                      content: const Text(
+                                        'Are you sure?',
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                          },
+                                          child: const Text('Cancel'),
+                                        ),
+                                        TextButton(
+                                          style: const ButtonStyle(
+                                              backgroundColor:
+                                              WidgetStatePropertyAll(
+                                                  Colors.red)),
+                                          onPressed: () {
+                                            _deleteBot(bot.id);
+                                            Navigator.pop(context);
+                                          },
+                                          child: const Text(
+                                            'Delete',
+                                            style: TextStyle(
+                                                color: Colors.white),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  });
+                            },
+                          ),
+                        // favorite button
+                      ],
+                    ),
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) {
+                          return StatefulBuilder(builder: (context, setState) {
+                            return _buildDialog(context, setState, 'view',
+                                assistant: bot);
+                          });
+                        },
+                      ).then((result) {
+                        resetDialogState();
+                      });
                     },
                   );
                 },
@@ -222,38 +358,125 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
     );
   }
 
-  // Build Create Bot Section
-  // Widget _buildCreateBotSection() {
-  //   return Padding(
-  //     padding: const EdgeInsets.all(16.0),
-  //     child: Row(
-  //       children: [
-  //         Expanded(
-  //           child: TextField(
-  //             controller: _botNameController,
-  //             decoration: const InputDecoration(
-  //               labelText: 'Enter Bot Name',
-  //               border: OutlineInputBorder(),
-  //             ),
-  //           ),
-  //         ),
-  //         const SizedBox(width: 10),
-  //         ElevatedButton(
-  //           onPressed: () {
-  //             // Add new bot
-  //             if (_botNameController.text.isNotEmpty) {
-  //               setState(() {
-  //                 customBots.add(_botNameController.text);
-  //               });
-  //               _botNameController.clear();
-  //             }
-  //           },
-  //           child: const Text('Create Bot'),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
+  Widget _buildDialog(BuildContext context, Function setState, String action,
+      {Assistant? assistant}) {
+    bool isViewing = action == 'view';
+
+    String title = '';
+    String submitText = '';
+    Function onSubmit = () {};
+
+    switch (action) {
+      case 'create':
+        title = 'New Assistant';
+        dialogDescriptionController.text = '';
+        dialogInstructionController.text = '';
+        submitText = 'Create';
+        onSubmit = _createBot;
+        break;
+
+      case 'update':
+        title = 'Update Assistant';
+        dialogDescriptionController.text = assistant!.description;
+        dialogInstructionController.text = assistant.instruction;
+        submitText = 'Update';
+        onSubmit = () {
+          _updateBot(assistant.id);
+        };
+        break;
+
+      case 'view':
+        title = assistant!.name;
+        dialogDescriptionController.text = assistant.description;
+        dialogInstructionController.text = assistant.instruction;
+        submitText = 'Use Assistant';
+        onSubmit = () {
+          Assistant.currentBot = assistant;
+          widget.onBotSelect(0);
+        };
+        break;
+    }
+
+    return AlertDialog(
+      title: dialogTitle(title),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 480),
+        child: SizedBox(
+          width: MediaQuery
+              .of(context)
+              .size
+              .width * 0.8,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (!isViewing) ...[
+                  const Text(
+                    'Name',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8.0),
+                  TextField(
+                    style: const TextStyle(fontSize: 12),
+                    controller: dialogNameController,
+                    decoration: dialogInputField('Name of your assistant'),
+                  ),
+                  const SizedBox(height: 16.0)
+                ],
+                const Text(
+                  'Instruction',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8.0),
+                TextField(
+                  maxLines: isViewing ? null : 2,
+                  style: const TextStyle(fontSize: 12, color: Colors.black),
+                  controller: dialogInstructionController,
+                  readOnly: isViewing,
+                  enabled: !isViewing,
+                  decoration: dialogInputField(
+                      'e.g: You are an assistant of the Jarvis system'),
+                ),
+                const SizedBox(height: 16.0),
+                const Text(
+                  'Description',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8.0),
+                TextField(
+                  maxLines: isViewing ? null : 3,
+                  style: const TextStyle(fontSize: 12, color: Colors.black),
+                  controller: dialogDescriptionController,
+                  readOnly: isViewing,
+                  enabled: !isViewing,
+                  decoration: dialogInputField(
+                      'e.g: This bot is used to ask about the Jarvis system....'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          style: ButtonStyle(
+              backgroundColor: WidgetStatePropertyAll(Colors.lightBlue[100])),
+          onPressed: () {
+            onSubmit();
+            Navigator.pop(context);
+          },
+          child: Text(submitText),
+        ),
+      ],
+    );
+  }
 
   // Build Predefined Bots Section
   Widget _buildPredefinedBotsSection() {
