@@ -7,6 +7,7 @@ import 'package:jarvis_project/models/message_model.dart';
 import 'package:jarvis_project/models/thread_model.dart';
 import 'package:jarvis_project/services/assistant_service.dart';
 import 'package:jarvis_project/services/chat_service.dart';
+import 'package:jarvis_project/services/prompt_service.dart';
 
 class ChatScreen extends StatefulWidget {
   // constructor
@@ -35,6 +36,12 @@ class _ChatScreenState extends State<ChatScreen> {
   final FocusNode _focusNode = FocusNode();
   final TextEditingController _controller = TextEditingController();
 
+  // prompt control for quick slash
+  OverlayEntry? _overlayEntry;
+  List<dynamic> _filteredPrompts = [];
+  bool _isPromptOverlayVisible = false;
+  final PromptService _promptService = PromptService();
+
   @override
   void dispose() {
     super.dispose();
@@ -45,6 +52,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    _fetchPrompts(); // Tải danh sách prompt
     _controller.text = widget.inputText;
 
     _focusNode.addListener(() {
@@ -54,6 +62,20 @@ class _ChatScreenState extends State<ChatScreen> {
     });
 
     init();
+  }
+
+  // Hàm tải prompt từ backend
+  Future<void> _fetchPrompts() async {
+    try {
+      var response = await _promptService.getPrompt(); // Gọi API
+      final data = json.decode(response);
+
+      setState(() {
+        _filteredPrompts = data['items']; // Gán dữ liệu vào danh sách prompt
+      });
+    } catch (e) {
+      print('Error loading prompts: $e');
+    }
   }
 
   // get all conversation
@@ -212,6 +234,107 @@ class _ChatScreenState extends State<ChatScreen> {
         print(e);
       }
     }
+  }
+
+  void _showPromptOverlay(String query) {
+    if (_overlayEntry != null) {
+      _overlayEntry!.remove(); // Xóa overlay cũ (nếu có)
+      _overlayEntry = null;
+    }
+
+    // Lọc prompt dựa trên query
+    String searchText = query.startsWith('/')
+        ? query.substring(1).toLowerCase()
+        : query.toLowerCase();
+    List<dynamic> filtered = _filteredPrompts.where((prompt) {
+      return prompt['title'].toLowerCase().contains(searchText);
+    }).toList();
+
+    if (filtered.isEmpty) {
+      _removePromptOverlay(); // Không hiển thị nếu danh sách trống
+      return;
+    }
+
+    // Tính toán lại vị trí TextField khi giao diện thay đổi
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final RenderBox renderBox = context.findRenderObject() as RenderBox;
+      final Offset textFieldOffset = renderBox.localToGlobal(Offset.zero);
+      final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+      final overlay = Overlay.of(context);
+      if (overlay == null) {
+        print("Overlay không khả dụng.");
+        return;
+      }
+
+      // Tạo OverlayEntry
+      _overlayEntry = OverlayEntry(
+        builder: (context) => Positioned(
+          left: 16,
+          right: 16,
+          // Điều chỉnh vị trí phù hợp với TextField
+          bottom: MediaQuery.of(context).size.height -
+              textFieldOffset.dy -
+              renderBox.size.height -
+              bottomInset +
+              60,
+          child: Material(
+            elevation: 4,
+            borderRadius: BorderRadius.circular(8),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxHeight: 200, // Giới hạn chiều cao của Overlay
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: filtered.length,
+                  itemBuilder: (context, index) {
+                    final prompt = filtered[index];
+                    return ListTile(
+                      title: Text(prompt['title']),
+                      subtitle: Text(prompt['description']),
+                      onTap: () {
+                        _controller.text = _controller.text.replaceAll(
+                          RegExp(r'/\w*$'),
+                          prompt['content'],
+                        );
+                        _controller.selection = TextSelection.fromPosition(
+                          TextPosition(offset: _controller.text.length),
+                        );
+                        _removePromptOverlay(); // Đóng overlay
+                      },
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      overlay.insert(_overlayEntry!);
+      _isPromptOverlayVisible = true;
+    });
+  }
+
+  void _removePromptOverlay() {
+    if (_overlayEntry != null) {
+      _overlayEntry!.remove();
+      _overlayEntry = null;
+    }
+    _isPromptOverlayVisible = false;
   }
 
   @override
@@ -415,6 +538,14 @@ class _ChatScreenState extends State<ChatScreen> {
                         maxLines: 6,
                         style: const TextStyle(fontSize: 14.0),
                         focusNode: _focusNode,
+                        onChanged: (value) {
+                          if (value.endsWith('/')) {
+                            _showPromptOverlay(
+                                value); // Hiển thị danh sách prompt
+                          } else if (_isPromptOverlayVisible) {
+                            _removePromptOverlay(); // Đóng overlay nếu không còn cần thiết
+                          }
+                        },
                         textInputAction: TextInputAction.done,
                         onSubmitted: (value) {
                           _sendMessage();
