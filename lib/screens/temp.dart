@@ -67,14 +67,19 @@ class _ChatScreenState extends State<ChatScreen> {
   // Hàm tải prompt từ backend
   Future<void> _fetchPrompts() async {
     try {
-      var response = await _promptService.getPrompt(); // Gọi API
+      var response = await _promptService.getPrompt(); // API call
       final data = json.decode(response);
 
+      // Debug: Check the data being loaded
+      print('Prompts Response: $data');
+
       setState(() {
-        _filteredPrompts = data['items']; // Gán dữ liệu vào danh sách prompt
+        // Handle cases where 'items' might be null
+        _filteredPrompts = data['items'] ?? [];
       });
     } catch (e) {
       print('Error loading prompts: $e');
+      _filteredPrompts = []; // Fallback to empty list
     }
   }
 
@@ -238,11 +243,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _showPromptOverlay(String query) {
     if (_overlayEntry != null) {
-      _overlayEntry!.remove(); // Xóa overlay cũ (nếu có)
+      _overlayEntry!.remove(); // Remove old overlay
       _overlayEntry = null;
     }
 
-    // Lọc prompt dựa trên query
+    // Filter prompts based on the query
     String searchText = query.startsWith('/')
         ? query.substring(1).toLowerCase()
         : query.toLowerCase();
@@ -251,28 +256,22 @@ class _ChatScreenState extends State<ChatScreen> {
     }).toList();
 
     if (filtered.isEmpty) {
-      _removePromptOverlay(); // Không hiển thị nếu danh sách trống
+      _removePromptOverlay(); // Hide overlay if the list is empty
       return;
     }
 
-    // Tính toán lại vị trí TextField khi giao diện thay đổi
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final RenderBox renderBox = context.findRenderObject() as RenderBox;
       final Offset textFieldOffset = renderBox.localToGlobal(Offset.zero);
       final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
       final overlay = Overlay.of(context);
-      if (overlay == null) {
-        print("Overlay không khả dụng.");
-        return;
-      }
 
-      // Tạo OverlayEntry
+      // Create OverlayEntry
       _overlayEntry = OverlayEntry(
         builder: (context) => Positioned(
           left: 16,
           right: 16,
-          // Điều chỉnh vị trí phù hợp với TextField
           bottom: MediaQuery.of(context).size.height -
               textFieldOffset.dy -
               renderBox.size.height -
@@ -283,7 +282,7 @@ class _ChatScreenState extends State<ChatScreen> {
             borderRadius: BorderRadius.circular(8),
             child: ConstrainedBox(
               constraints: const BoxConstraints(
-                maxHeight: 200, // Giới hạn chiều cao của Overlay
+                maxHeight: 200, // Limit the height of the overlay
               ),
               child: Container(
                 decoration: BoxDecoration(
@@ -293,30 +292,39 @@ class _ChatScreenState extends State<ChatScreen> {
                     BoxShadow(
                       color: Colors.black.withOpacity(0.1),
                       blurRadius: 4,
-                      offset: Offset(0, 2),
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    final prompt = filtered[index];
-                    return ListTile(
-                      title: Text(prompt['title']),
-                      subtitle: Text(prompt['description']),
-                      onTap: () {
-                        _controller.text = _controller.text.replaceAll(
-                          RegExp(r'/\w*$'),
-                          prompt['content'],
-                        );
-                        _controller.selection = TextSelection.fromPosition(
-                          TextPosition(offset: _controller.text.length),
-                        );
-                        _removePromptOverlay(); // Đóng overlay
-                      },
-                    );
-                  },
+                child: Scrollbar(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      final prompt = filtered[index];
+
+                      // Ensure prompt fields are not null
+                      final title = prompt['title'] ?? 'Untitled';
+                      final description =
+                          prompt['description'] ?? 'No description available';
+                      final content = prompt['content'] ?? '';
+                      return ListTile(
+                        title: Text(title),
+                        subtitle: Text(description),
+                        onTap: () {
+                          // Replace the current text with the prompt content
+                          _controller.text = _controller.text.replaceAll(
+                            RegExp(r'/\w*$'),
+                            content,
+                          );
+                          _controller.selection = TextSelection.fromPosition(
+                            TextPosition(offset: _controller.text.length),
+                          );
+                          _removePromptOverlay(); // Close the overlay
+                        },
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
