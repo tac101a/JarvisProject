@@ -3,6 +3,7 @@ import 'dart:core';
 
 import 'package:flutter/material.dart';
 import 'package:jarvis_project/models/knowledge_model.dart';
+import 'package:jarvis_project/models/knowledge_unit_model.dart';
 import 'package:jarvis_project/services/knowledge_service.dart';
 
 import '../components/error_modal.dart';
@@ -22,12 +23,15 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
 
   // State variables
   bool isLoading = true;
+  bool isUnitLoading = false;
+  String uploadType = ''; // file, web, slack, confluence
   List<dynamic> knowledgeList = [
     'Knowledge 1',
     'Knowledge 2',
     'Knowledge 3'
   ]; // Example data
   List<dynamic> showingList = [];
+  List<dynamic> kbUnitList = [];
 
   // text controller
   final TextEditingController dialogNameController = TextEditingController();
@@ -264,14 +268,48 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                             });
                       },
                     ),
-                    // favorite button
                   ],
                 ),
-                onTap: () {
+                onTap: () async {
                   showDialog(
                     context: context,
                     builder: (context) {
+                      bool isAPICalled = false;
                       return StatefulBuilder(builder: (context, setState) {
+                        Future<void> _getKnowledgeUnit(String id) async {
+                          try {
+                            setState(() {
+                              isUnitLoading = true;
+                            });
+
+                            var response =
+                                await _knowledgeService.getKnowledgeUnit(id);
+                            var data = json.decode(response);
+
+                            List<dynamic> temp = [];
+                            for (var item in data['data']) {
+                              temp.add(KnowledgeUnit(
+                                item['id'],
+                                item['name'],
+                              ));
+
+                              setState(() {
+                                kbUnitList = temp;
+                                isUnitLoading = false;
+                              });
+                            }
+                          } catch (e) {
+                            showErrorModal(context, e.toString());
+                          }
+                        }
+
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (!isAPICalled) {
+                            isAPICalled = true;
+                            _getKnowledgeUnit(kb.id);
+                          }
+                        });
+
                         return _buildDialog(context, setState, 'view',
                             knowledge: kb);
                       });
@@ -352,8 +390,6 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                   TextField(
                     style: const TextStyle(fontSize: 12),
                     controller: dialogNameController,
-                    readOnly: isViewing,
-                    enabled: !isViewing,
                     decoration: dialogInputField('Name of the knowledge'),
                   ),
                   const SizedBox(height: 16.0)
@@ -364,12 +400,152 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                 ),
                 const SizedBox(height: 8.0),
                 TextField(
-                  maxLines: isViewing ? 10 : 3,
+                  minLines: 1,
+                  maxLines: 10,
+                  readOnly: isViewing,
                   style: const TextStyle(fontSize: 12, color: Colors.black),
                   controller: dialogDescriptionController,
                   decoration: dialogInputField(
                       'e.g: This is the description of this knowledge'),
                 ),
+                if (action != 'create') ...[
+                  const SizedBox(height: 16.0),
+                  const Text(
+                    'Knowledge unit',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                  if (isUnitLoading)
+                    const Center(child: CircularProgressIndicator()),
+                  if (!isUnitLoading) ...[
+                    if (kbUnitList.isEmpty)
+                      const Center(
+                          child: Text(
+                        'Empty list',
+                        style: TextStyle(color: Colors.grey),
+                      )),
+                    if (kbUnitList.isNotEmpty)
+                      ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: kbUnitList.length,
+                          itemBuilder: (context, index) {
+                            final unit = kbUnitList[index];
+
+                            return ListTile(
+                              title: Text(
+                                '${index + 1}. ${unit.name}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            );
+                          })
+                  ],
+                  const Divider(
+                    color: Colors.grey,
+                    thickness: 0.5,
+                    height: 20,
+                    indent: 10,
+                    endIndent: 10,
+                  ),
+                  const Text(
+                    'Add knowledge unit',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8.0),
+                  Row(
+                    children: [
+                      Container(
+                          decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              border:
+                                  Border.all(color: Colors.grey, width: 0.5),
+                              borderRadius: BorderRadius.circular(8)),
+                          child: IconButton(
+                            onPressed: () async {
+                              setState(() {
+                                uploadType = 'file';
+                              });
+
+                              try {
+                                var response = await _knowledgeService
+                                    .addFileToKnowledge(knowledge!.id);
+
+                                if (mounted) {
+                                  var snackbarText = '';
+                                  if (response) {
+                                    snackbarText = 'Added successfully.';
+                                  } else {
+                                    snackbarText = 'Added failed.';
+                                  }
+
+                                  // show snackbar
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text(snackbarText)));
+                                  // close dialog
+                                  Navigator.pop(context);
+                                }
+                              } catch (e) {
+                                showErrorModal(context, e.toString());
+                              }
+                            },
+                            icon: const Icon(Icons.upload_file),
+                            tooltip: 'Upload from file',
+                            hoverColor: Colors.transparent,
+                          )),
+                      const SizedBox(width: 16.0),
+                      Container(
+                          decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              border:
+                                  Border.all(color: Colors.grey, width: 0.5),
+                              borderRadius: BorderRadius.circular(8)),
+                          child: IconButton(
+                            onPressed: () {
+                              setState(() {
+                                uploadType = 'web';
+                              });
+                            },
+                            icon: const Icon(Icons.add_link),
+                            tooltip: 'Upload from website',
+                            hoverColor: Colors.transparent,
+                          )),
+                      const SizedBox(width: 16.0),
+                      Container(
+                          decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              border:
+                                  Border.all(color: Colors.grey, width: 0.5),
+                              borderRadius: BorderRadius.circular(8)),
+                          child: IconButton(
+                            onPressed: () {
+                              setState(() {
+                                uploadType = 'slack';
+                              });
+                            },
+                            icon: const Icon(Icons.chat),
+                            tooltip: 'Upload from Slack',
+                            hoverColor: Colors.transparent,
+                          )),
+                      const SizedBox(width: 16.0),
+                      Container(
+                          decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              border:
+                                  Border.all(color: Colors.grey, width: 0.5),
+                              borderRadius: BorderRadius.circular(8)),
+                          child: IconButton(
+                            onPressed: () {
+                              setState(() {
+                                uploadType = 'confluence';
+                              });
+                            },
+                            icon: const Icon(Icons.account_tree),
+                            tooltip: 'Upload from Confluence',
+                            hoverColor: Colors.transparent,
+                          )),
+                    ],
+                  ),
+                  _buildUploadDataBody(knowledge!.id)
+                ]
               ],
             ),
           ),
@@ -393,6 +569,327 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
         ),
       ],
     );
+  }
+
+  // build upload data body
+  Widget _buildUploadDataBody(String id) {
+    final formKey = GlobalKey<FormState>();
+    Map<String, String> formData = {};
+
+    // file, web, slack, confluence
+    switch (uploadType) {
+      case 'file':
+        return Container();
+
+      case 'web':
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Name',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  TextFormField(
+                    style: const TextStyle(fontSize: 12, color: Colors.black),
+                    decoration: dialogInputField('Unit Name'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter some text';
+                      }
+                      return null;
+                    },
+                    onSaved: (value) {
+                      formData['name'] = value ?? '';
+                    },
+                  ),
+                  const SizedBox(height: 8.0),
+                  const Text(
+                    'URL',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  TextFormField(
+                    style: const TextStyle(fontSize: 12, color: Colors.black),
+                    decoration: dialogInputField('URL to data'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter some text';
+                      }
+                      return null;
+                    },
+                    onSaved: (value) {
+                      formData['url'] = value ?? '';
+                    },
+                  ),
+                  const SizedBox(height: 8.0),
+                  ElevatedButton(
+                    onPressed: () async {
+                      // if validated
+                      if (formKey.currentState!.validate()) {
+                        formKey.currentState!.save();
+
+                        try {
+                          var response =
+                              await _knowledgeService.addWebsiteToKnowledge(
+                                  id: id,
+                                  name: formData['name']!,
+                                  url: formData['url']!);
+
+                          // close dialog
+                          Navigator.pop(context);
+
+                          if (mounted) {
+                            var snackbarText = '';
+
+                            if (response) {
+                              snackbarText = 'Added successfully.';
+                            } else {
+                              snackbarText = 'Added failed.';
+                            }
+                            // show snackbar
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(snackbarText)));
+                          }
+                        } catch (e) {
+                          showErrorModal(context, e.toString());
+                        }
+                      }
+                    },
+                    child: const Text("Add"),
+                  ),
+                ],
+              )),
+        );
+
+      case 'slack':
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Name',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  TextFormField(
+                    style: const TextStyle(fontSize: 12, color: Colors.black),
+                    decoration: dialogInputField('Unit Name'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter some text';
+                      }
+                      return null;
+                    },
+                    onSaved: (value) {
+                      formData['name'] = value ?? '';
+                    },
+                  ),
+                  const SizedBox(height: 8.0),
+                  const Text(
+                    'Workspace',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  TextFormField(
+                    style: const TextStyle(fontSize: 12, color: Colors.black),
+                    decoration: dialogInputField('Slack workspace name'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter some text';
+                      }
+                      return null;
+                    },
+                    onSaved: (value) {
+                      formData['workspace'] = value ?? '';
+                    },
+                  ),
+                  const SizedBox(height: 8.0),
+                  const Text(
+                    'Token',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  TextFormField(
+                    style: const TextStyle(fontSize: 12, color: Colors.black),
+                    decoration: dialogInputField('Slack bot token'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter some text';
+                      }
+                      return null;
+                    },
+                    onSaved: (value) {
+                      formData['token'] = value ?? '';
+                    },
+                  ),
+                  const SizedBox(height: 8.0),
+                  ElevatedButton(
+                    onPressed: () async {
+                      // if validated
+                      if (formKey.currentState!.validate()) {
+                        formKey.currentState!.save();
+
+                        try {
+                          var response =
+                              await _knowledgeService.addSlackToKnowledge(
+                                  id: id,
+                                  name: formData['name']!,
+                                  workspace: formData['workspace']!,
+                                  token: formData['token']!);
+
+                          // close dialog
+                          Navigator.pop(context);
+
+                          if (mounted) {
+                            var snackbarText = '';
+
+                            if (response) {
+                              snackbarText = 'Added successfully.';
+                            } else {
+                              snackbarText = 'Added failed.';
+                            }
+                            // show snackbar
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(snackbarText)));
+                          }
+                        } catch (e) {
+                          showErrorModal(context, e.toString());
+                        }
+                      }
+                    },
+                    child: const Text("Add"),
+                  ),
+                ],
+              )),
+        );
+
+      case 'confluence':
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Name',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  TextFormField(
+                    style: const TextStyle(fontSize: 12, color: Colors.black),
+                    decoration: dialogInputField('Unit Name'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter some text';
+                      }
+                      return null;
+                    },
+                    onSaved: (value) {
+                      formData['name'] = value ?? '';
+                    },
+                  ),
+                  const SizedBox(height: 8.0),
+                  const Text(
+                    'URL',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  TextFormField(
+                    style: const TextStyle(fontSize: 12, color: Colors.black),
+                    decoration: dialogInputField('Confluence Page URL'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter some text';
+                      }
+                      return null;
+                    },
+                    onSaved: (value) {
+                      formData['page'] = value ?? '';
+                    },
+                  ),
+                  const SizedBox(height: 8.0),
+                  const Text(
+                    'Username',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  TextFormField(
+                    style: const TextStyle(fontSize: 12, color: Colors.black),
+                    decoration: dialogInputField('Confluence username'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter some text';
+                      }
+                      return null;
+                    },
+                    onSaved: (value) {
+                      formData['username'] = value ?? '';
+                    },
+                  ),
+                  const SizedBox(height: 8.0),
+                  const Text(
+                    'Token',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  TextFormField(
+                    style: const TextStyle(fontSize: 12, color: Colors.black),
+                    decoration: dialogInputField('Confluence access token'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter some text';
+                      }
+                      return null;
+                    },
+                    onSaved: (value) {
+                      formData['token'] = value ?? '';
+                    },
+                  ),
+                  const SizedBox(height: 8.0),
+                  ElevatedButton(
+                    onPressed: () async {
+                      // if validated
+                      if (formKey.currentState!.validate()) {
+                        formKey.currentState!.save();
+
+                        try {
+                          var response =
+                              await _knowledgeService.addConfluenceToKnowledge(
+                                  id: id,
+                                  name: formData['name']!,
+                                  page: formData['workspace']!,
+                                  token: formData['token']!,
+                                  username: formData['username']!);
+
+                          // close dialog
+                          Navigator.pop(context);
+
+                          if (mounted) {
+                            var snackbarText = '';
+
+                            if (response) {
+                              snackbarText = 'Added successfully.';
+                            } else {
+                              snackbarText = 'Added failed.';
+                            }
+                            // show snackbar
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(snackbarText)));
+                          }
+                        } catch (e) {
+                          showErrorModal(context, e.toString());
+                        }
+                      }
+                    },
+                    child: const Text("Add"),
+                  ),
+                ],
+              )),
+        );
+
+      default:
+        return Container();
+    }
   }
 
   // Show Upload Options Dialog

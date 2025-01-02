@@ -37,5 +37,10 @@ const kbEndpoints = {
   'getKnowledge': '/kb-core/v1/knowledge',
   'createKnowledge': '/kb-core/v1/knowledge',
   'deleteKnowledge': '/kb-core/v1/knowledge/',
-  'updateKnowledge': '/kb-core/v1/knowledge/'
+  'updateKnowledge': '/kb-core/v1/knowledge/',
+  'getKnowledgeUnit': '/kb-core/v1/knowledge/',
+  'addWebsite': '/kb-core/v1/knowledge/',
+  'addFile': '/kb-core/v1/knowledge/',
+  'addSlack': '/kb-core/v1/knowledge/',
+  'addConfluence': '/kb-core/v1/knowledge/'
 };

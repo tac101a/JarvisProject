@@ -1,6 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:jarvis_project/util/endpoints.dart';
+import 'package:mime/mime.dart';
 
 import '../models/user_model.dart';
 
@@ -459,7 +462,7 @@ final class ApiService {
   }
 
   // ---------- Knowledge base ----------
-  // get all ai bot
+  // get knowledge base
   Future<http.Response> getKnowledge() async {
     // url
     var url = kbURL + kbEndpoints['getKnowledge']!;
@@ -476,7 +479,7 @@ final class ApiService {
     }
   }
 
-  // create assistant
+  // create knowledge
   Future<http.Response> createKnowledge(Map<String, dynamic> data) async {
     // url
     var url = kbURL + kbEndpoints['createKnowledge']!;
@@ -497,7 +500,7 @@ final class ApiService {
     }
   }
 
-  // delete assistant
+  // delete knowledge
   Future<http.Response> deleteKnowledge(String id) async {
     // url
     var url = kbURL + kbEndpoints['deleteKnowledge']!;
@@ -517,7 +520,7 @@ final class ApiService {
     }
   }
 
-  // update assistant
+  // update knowledge
   Future<http.Response> updateKnowledge(
       String id, Map<String, dynamic> data) async {
     // url
@@ -527,6 +530,122 @@ final class ApiService {
     try {
       final response = await http.patch(
         Uri.parse('$url$id'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${User.kbAccessToken}'
+        },
+        body: json.encode(data),
+      );
+      return response;
+    } catch (e) {
+      throw Exception('Request Failed: $e');
+    }
+  }
+
+  // get knowledge unit
+  Future<http.Response> getKnowledgeUnit(String id) async {
+    // url
+    var url = kbURL + kbEndpoints['getKnowledgeUnit']!;
+
+    // request
+    try {
+      final response = await http.get(Uri.parse('$url$id/units'), headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${User.kbAccessToken}'
+      });
+      return response;
+    } catch (e) {
+      throw Exception('Request Failed: $e');
+    }
+  }
+
+  // add website
+  Future<http.Response> addWebsiteToKnowledge(
+      String id, Map<String, dynamic> data) async {
+    // url
+    var url = kbURL + kbEndpoints['addWebsite']!;
+
+    // request
+    try {
+      final response = await http.post(
+        Uri.parse('$url$id/web'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${User.kbAccessToken}'
+        },
+        body: json.encode(data),
+      );
+      return response;
+    } catch (e) {
+      throw Exception('Request Failed: $e');
+    }
+  }
+
+  // add file
+  Future<http.StreamedResponse> addFileToKnowledge(String id, File file) async {
+    // url
+    var url = kbURL + kbEndpoints['addFile']!;
+
+    // request
+    try {
+      var request =
+          http.MultipartRequest('POST', Uri.parse('$url$id/local-file'));
+
+      var fileBytes = await file.readAsBytes();
+      var mimeType = lookupMimeType(file.path);
+      var mimeTypeSplit =
+          mimeType?.split('/') ?? ['application', 'octet-stream'];
+
+      var multipartFile = http.MultipartFile.fromBytes('file', fileBytes,
+          filename: file.path.split('/').last,
+          contentType: MediaType(mimeTypeSplit[0], mimeTypeSplit[1]));
+      request.files.add(multipartFile);
+      request.headers.addAll({
+        'Authorization': 'Bearer ${User.kbAccessToken}',
+        'Content-Type': 'multipart/form-data; charset=utf-8',
+      });
+
+      print(request.headers);
+      var response = await request.send();
+
+      return response;
+    } catch (e) {
+      throw Exception('Request Failed: $e');
+    }
+  }
+
+  // add data from slack
+  Future<http.Response> addDataFromSlack(
+      String id, Map<String, dynamic> data) async {
+    // url
+    var url = kbURL + kbEndpoints['addSlack']!;
+
+    // request
+    try {
+      final response = await http.post(
+        Uri.parse('$url$id/slack'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${User.kbAccessToken}'
+        },
+        body: json.encode(data),
+      );
+      return response;
+    } catch (e) {
+      throw Exception('Request Failed: $e');
+    }
+  }
+
+  // add data from slack
+  Future<http.Response> addDataFromConfluence(
+      String id, Map<String, dynamic> data) async {
+    // url
+    var url = kbURL + kbEndpoints['addConfluence']!;
+
+    // request
+    try {
+      final response = await http.post(
+        Uri.parse('$url$id/confluence'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${User.kbAccessToken}'
