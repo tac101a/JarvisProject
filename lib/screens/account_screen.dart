@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:go_router/go_router.dart';
 import '../models/user_model.dart';
 
 class AccountPage extends StatelessWidget {
@@ -39,24 +39,18 @@ class AccountPage extends StatelessWidget {
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.account_circle),
-              title: const Text('Account'),
-              onTap: () {},
+              leading: const Icon(Icons.home),
+              title: const Text('Home'),
+              onTap: () {
+                context.go('/');
+              },
             ),
             ListTile(
               leading: const Icon(Icons.payment),
               title: const Text('Billing'),
-              onTap: () {},
-            ),
-            ListTile(
-              leading: const Icon(Icons.card_giftcard),
-              title: const Text('Reward'),
-              onTap: () {},
-            ),
-            ListTile(
-              leading: const Icon(Icons.help),
-              title: const Text('Tutorial'),
-              onTap: () {},
+              onTap: () {
+                context.go('/pricing');
+              },
             ),
           ],
         ),
@@ -70,33 +64,17 @@ class AccountPage extends StatelessWidget {
             SettingsCard(
               title: 'AI Jarvis',
               subtitle: 'UID: ${User.id}',
-              trailing:
-                  TextButton(onPressed: () {}, child: const Text('Change')),
+              trailing: TextButton(onPressed: () {}, child: const Text('')),
             ),
             SettingsCard(
               title: 'Email',
               subtitle: User.email,
-              trailing:
-                  TextButton(onPressed: () {}, child: const Text('Change')),
+              trailing: TextButton(onPressed: () {}, child: const Text('')),
             ),
             SettingsCard(
               title: 'Password',
               subtitle: 'Set a password to enable password login',
-              trailing: TextButton(
-                  onPressed: () {}, child: const Text('Set Password')),
-            ),
-            const SectionTitle(title: 'Linked Account'),
-            const SettingsCard(
-              title: 'Google',
-              subtitle: 'myjarvischat@gmail.com',
-              trailing: Icon(Icons.link),
-            ),
-            const SectionTitle(title: 'Email Preferences'),
-            SettingsCard(
-              title: 'Notifications will be sent to this email',
-              subtitle: 'myjarvischat@gmail.com',
-              trailing:
-                  TextButton(onPressed: () {}, child: const Text('Change')),
+              trailing: TextButton(onPressed: () {}, child: const Text('')),
             ),
           ],
         ),
