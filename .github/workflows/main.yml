@@ -25,9 +25,14 @@ jobs:
 
       - name: Generate splash screen
         run: flutter pub run flutter_native_splash:create
-      
+
       - name: Generate launcher icons
         run: flutter pub run flutter_launcher_icons:main
+
+      - name: Set up keystore
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/keystore.jks
+          echo "$KEY_PROPERTIES_CONTENT" > android/key.properties
 
       - name: Build release
         run: flutter build appbundle --release
