@@ -4,6 +4,9 @@ class User {
   static late String email;
   static bool isSignedIn = false;
 
+  static int remainingUsage = 0;
+  static bool unlimited = false;
+
   static String accessToken = '';
   static String refreshToken = '';
 

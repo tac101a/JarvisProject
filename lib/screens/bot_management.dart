@@ -2,7 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:jarvis_project/models/assistant_model.dart';
+import 'package:jarvis_project/models/knowledge_model.dart';
 import 'package:jarvis_project/services/assistant_service.dart';
+import 'package:jarvis_project/services/knowledge_service.dart';
 
 import '../components/error_modal.dart';
 import '../components/search_bar.dart';
@@ -20,6 +22,7 @@ class BotManagementScreen extends StatefulWidget {
 class _BotManagementScreenState extends State<BotManagementScreen> {
   // service
   final AssistantService _assistantService = AssistantService();
+  final KnowledgeService _knowledgeService = KnowledgeService();
 
   // text field controller
   TextEditingController dialogNameController = TextEditingController();
@@ -38,7 +41,10 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
   // state
   int _selectedType = 0;
   bool isLoading = true;
+  bool isDialogLoading = false;
   List<dynamic> showingList = [];
+  List<dynamic> botKBList = [];
+  List<dynamic> kbList = [];
 
   // Text controller for creating a new bot
   final TextEditingController searchBarController = TextEditingController();
@@ -141,9 +147,8 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
 
   void resetDialogState() {
     setState(() {
-      dialogNameController.text = '';
-      dialogInstructionController.text = '';
-      dialogDescriptionController.text = '';
+      botKBList.clear();
+      kbList.clear();
     });
   }
 
@@ -337,11 +342,91 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
                         // favorite button
                       ],
                     ),
-                    onTap: () {
+                    onTap: () async {
                       showDialog(
                         context: context,
                         builder: (context) {
+                          bool isAPICalled = false;
+
                           return StatefulBuilder(builder: (context, setState) {
+                            if (bot.type == 'custom') {
+                              Future<void> getAssistantKnowledge(
+                                  String id) async {
+                                try {
+                                  var response = await _assistantService
+                                      .getAssistantKnowledge(id);
+                                  var data = json.decode(response);
+
+                                  List<dynamic> temp = [];
+                                  for (var item in data['data']) {
+                                    temp.add(Knowledge(
+                                        id: item['id'],
+                                        name: item['knowledgeName'],
+                                        description: item['description']));
+
+                                    setState(() {
+                                      botKBList = temp;
+                                    });
+                                  }
+                                } catch (e) {
+                                  showErrorModal(context, e.toString());
+                                }
+                              }
+
+                              Future<void> getKnowledgeList() async {
+                                try {
+                                  var response =
+                                  await _knowledgeService.getKnowledge();
+                                  var data = json.decode(response);
+
+                                  List<dynamic> temp = [];
+                                  for (var item in data['data']) {
+                                    temp.add(Knowledge(
+                                        id: item['id'],
+                                        name: item['knowledgeName'],
+                                        description: item['description']));
+                                  }
+
+                                  setState(() {
+                                    kbList = temp.where((element) {
+                                      for (var item in botKBList) {
+                                        if (item.id == element.id) {
+                                          return false;
+                                        }
+                                      }
+                                      return true;
+                                    }).toList();
+                                  });
+                                } catch (e) {
+                                  showErrorModal(context, e.toString());
+                                }
+                              }
+
+                              Future<void> apiCall(String id) async {
+                                try {
+                                  setState(() {
+                                    isDialogLoading = true;
+                                  });
+
+                                  await getAssistantKnowledge(id);
+                                  await getKnowledgeList();
+
+                                  if (mounted) {
+                                    setState(() {
+                                      isDialogLoading = false;
+                                    });
+                                  }
+                                } catch (e) {
+                                  showErrorModal(context, e.toString());
+                                }
+                              }
+
+                              if (!isAPICalled) {
+                                isAPICalled = true;
+                                apiCall(bot.id);
+                              }
+                            }
+
                             return _buildDialog(context, setState, 'view',
                                 assistant: bot);
                           });
@@ -453,6 +538,118 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
                   decoration: dialogInputField(
                       'e.g: This bot is used to ask about the Jarvis system....'),
                 ),
+                if (action != 'create' && assistant?.type == 'custom') ...[
+                  const SizedBox(height: 16.0),
+                  const Text(
+                    'Knowledge',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                  if (isDialogLoading)
+                    const Center(child: CircularProgressIndicator()),
+                  if (!isDialogLoading) ...[
+                    if (botKBList.isEmpty)
+                      const Center(
+                          child: Text(
+                            'Empty list',
+                            style: TextStyle(color: Colors.grey),
+                          )),
+                    if (botKBList.isNotEmpty)
+                      ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: botKBList.length,
+                          itemBuilder: (context, index) {
+                            final unit = botKBList[index];
+
+                            return ListTile(
+                              title: Text(
+                                '${index + 1}. ${unit.name}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                              trailing: IconButton(onPressed: () async {
+                                var response = await _assistantService
+                                    .deleteKnowledgeFromAssistant(
+                                    botID: assistant!.id, kbID: unit.id);
+
+                                if (mounted) {
+                                  if (response) {
+                                    setState(() {
+                                      kbList.add(unit);
+                                      botKBList.remove(unit);
+                                    });
+
+                                    // show snackbar
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(const SnackBar(
+                                        content: Text(
+                                            'Deleted')));
+                                  } else {
+                                    throw Exception('Request failed');
+                                  }
+                                }
+                              }, icon: Icon(Icons.delete)),
+                            );
+                          }),
+                    const Divider(
+                      color: Colors.grey,
+                      thickness: 0.5,
+                      height: 20,
+                      indent: 10,
+                      endIndent: 10,
+                    ),
+                    const Text(
+                      'Add knowledge',
+                      style:
+                      TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8.0),
+                    if (kbList.isEmpty)
+                      const Center(
+                          child: Text(
+                            'Empty list',
+                            style: TextStyle(color: Colors.grey),
+                          )),
+                    if (kbList.isNotEmpty)
+                      ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: kbList.length,
+                          itemBuilder: (context, index) {
+                            final kb = kbList[index];
+
+                            return ListTile(
+                              title: Text(
+                                '${index + 1}. ${kb.name}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                              trailing: IconButton(
+                                  onPressed: () async {
+                                    try {
+                                      await _assistantService
+                                          .addKnowledgeToAssistant(
+                                          botID: assistant!.id,
+                                          kbID: kb.id);
+
+                                      if (mounted) {
+                                        setState(() {
+                                          kbList.remove(kb);
+                                          botKBList.add(kb);
+                                        });
+
+                                        // show snackbar
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(const SnackBar(
+                                            content: Text(
+                                                'Added successfully')));
+                                      }
+                                    } catch (e) {
+                                      showErrorModal(context, e.toString());
+                                    }
+                                  },
+                                  icon: Icon(Icons.add)),
+                            );
+                          })
+                  ],
+                ]
               ],
             ),
           ),

@@ -4,11 +4,10 @@ import 'api_service.dart';
 
 class PromptService {
   // get prompt
-  Future<String> getPrompt(
-      {String? query,
-      String? category,
-      bool? isPublic,
-      bool? isFavorite}) async {
+  Future<String> getPrompt({String? query,
+    String? category,
+    bool? isPublic,
+    bool? isFavorite}) async {
     try {
       Map<String, String> param = {
         if (query != null && query.isNotEmpty) 'query': query,
@@ -17,7 +16,6 @@ class PromptService {
         if (isPublic != null) 'isPublic': isPublic.toString()
       };
 
-      print(param);
       final response = await apiService.getPrompt(param);
 
       if (response.statusCode == 200) {
@@ -61,13 +59,12 @@ class PromptService {
   }
 
   // create new prompt
-  Future<bool> createPrompt(
-      {required String title,
-      required String language,
-      required String category,
-      required bool isPublic,
-      required String description,
-      required String content}) async {
+  Future<bool> createPrompt({required String title,
+    required String language,
+    required String category,
+    required bool isPublic,
+    required String description,
+    required String content}) async {
     try {
       final response = await apiService.createPrompt({
         'title': title,
@@ -77,9 +74,6 @@ class PromptService {
         'description': description,
         'content': content,
       });
-
-      var data = json.decode(response.body);
-      print(data);
 
       if (response.statusCode == 201) {
         print('create prompt success');
@@ -110,11 +104,11 @@ class PromptService {
   // update prompt
   Future<bool> updatePrompt(String id,
       {required String title,
-      required String language,
-      required String category,
-      required bool isPublic,
-      required String description,
-      required String content}) async {
+        required String language,
+        required String category,
+        required bool isPublic,
+        required String description,
+        required String content}) async {
     try {
       final response = await apiService.updatePrompt(id, {
         'title': title,
@@ -124,9 +118,6 @@ class PromptService {
         'description': description,
         'content': content,
       });
-
-      var data = json.decode(response.body);
-      print(data);
 
       if (response.statusCode == 200) {
         print('update prompt success');

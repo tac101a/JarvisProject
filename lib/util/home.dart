@@ -55,18 +55,22 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Row(
-        children: [
-          // Main content on the left
-          Expanded(child: _pages[_currentIndex]),
-          // Sidebar on the right
-          Sidebar(
-            onIconTap: _onIconTap,
-            currentIndex: _currentIndex,
-          ),
-        ],
+        body: Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 360),
+        child: Row(
+          children: [
+            // Main content on the left
+            Expanded(child: _pages[_currentIndex]),
+            // Sidebar on the right
+            Sidebar(
+              onIconTap: _onIconTap,
+              currentIndex: _currentIndex,
+            ),
+          ],
+        ),
       ),
-    );
+    ));
   }
 }
 

@@ -160,26 +160,15 @@ class _AuthScreenState extends State<AuthScreen> {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          // Added SingleChildScrollView here
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            // Added SingleChildScrollView here
+            child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+                minHeight: MediaQuery.of(context).size.height - 32),
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                // Close Button
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      iconSize: 35.0,
-                      onPressed: () {
-                        context.go('/');
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 80),
-
                 // Logo and Title
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -190,198 +179,159 @@ class _AuthScreenState extends State<AuthScreen> {
                     ),
                     const SizedBox(width: 10),
                     const Text(
-                      'Jarvis',
+                      'Luna',
                       style: TextStyle(
                         fontSize: 45,
+                        fontFamily: 'Mokoto',
                         fontWeight: FontWeight.bold,
                         color: primaryBlue,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 80),
-
-                // Sign in with Google Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.login),
-                    label: const Text(
-                      'Sign in with Google',
-                      style: TextStyle(fontWeight: FontWeight.w400),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.black,
-                      backgroundColor: const Color.fromARGB(255, 245, 244, 250),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Divider with "or" text
-                const Row(
+                Column(
                   children: [
-                    Expanded(
-                      child: Divider(
-                        thickness: 1,
-                        color: Colors.grey,
+                    // Registration fields for non-login state
+                    if (!isLogin) ...[
+                      TextField(
+                        controller: usernameController,
+                        decoration: usernameFieldDecoration,
                       ),
+                      const SizedBox(height: 10),
+                    ],
+                    if (!isLogin && _isUsernameEmpty) ...[
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '* Please enter username.',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      )
+                    ],
+                    TextField(
+                      controller: emailController,
+                      decoration: emailFieldDecoration,
                     ),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 10),
-                      child: Text(
-                        'or',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 16,
+                    if (!_emailValid) ...[
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '* Please enter a valid email.',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      )
+                    ],
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: passwordController,
+                      obscureText: !_pwdVisibility,
+                      decoration: passwordFieldDecoration(
+                          hintText: 'Enter your password',
+                          obscureText: !_pwdVisibility,
+                          onToggleVisibility: () {
+                            setState(() {
+                              _pwdVisibility = !_pwdVisibility;
+                            });
+                          }),
+                    ),
+                    if (_isSignInFailed) ...[
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '* Invalid email or password.',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      )
+                    ],
+                    if (!_passwordValid) ...[
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '* Password must be 6-32 characters long and include '
+                          'uppercase letters, lowercase letters, and numbers.',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      )
+                    ],
+                    const SizedBox(height: 10),
+                    if (!isLogin) ...[
+                      TextField(
+                        controller: confirmPasswordController,
+                        obscureText: !_cfPwdVisibility,
+                        decoration: passwordFieldDecoration(
+                            hintText: 'Confirm your password',
+                            obscureText: !_cfPwdVisibility,
+                            onToggleVisibility: () {
+                              setState(() {
+                                _cfPwdVisibility = !_cfPwdVisibility;
+                              });
+                            }),
+                      ),
+                      if (!isLogin && !_cfPasswordValid) ...[
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            '* Confirm password is not correct.',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        )
+                      ],
+                      const SizedBox(height: 10),
+                    ],
+                    const SizedBox(height: 20),
+
+                    // Submit Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: submitData,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryBlue,
+                          padding: const EdgeInsets.all(20),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30.0),
+                          ),
+                        ),
+                        child: Text(
+                          isLogin ? 'Login' : 'Register',
+                          style: const TextStyle(
+                            fontSize: 16.0,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
-                    Expanded(
-                      child: Divider(
-                        thickness: 1,
-                        color: Colors.grey,
-                      ),
-                    ),
+                    const SizedBox(height: 20),
                   ],
                 ),
-                const SizedBox(height: 20),
 
-                // Registration fields for non-login state
-                if (!isLogin) ...[
-                  TextField(
-                    controller: usernameController,
-                    decoration: usernameFieldDecoration,
-                  ),
-                  const SizedBox(height: 10),
-                ],
-                if (!isLogin && _isUsernameEmpty) ...[
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      '* Please enter username.',
-                      style: TextStyle(color: Colors.red),
+                Column(
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        isLogin
+                            ? context.go('/register')
+                            : context.go('/login');
+                      },
+                      child: Text(isLogin
+                          ? "Don't have an account? Register"
+                          : "Already have an account? Login"),
                     ),
-                  )
-                ],
-                TextField(
-                  controller: emailController,
-                  decoration: emailFieldDecoration,
-                ),
-                if (!_emailValid) ...[
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      '* Please enter a valid email.',
-                      style: TextStyle(color: Colors.red),
+                    const SizedBox(height: 20),
+
+                    // Privacy Policy Text
+                    const Text(
+                      'By continuing, you agree to our Privacy policy',
+                      style: TextStyle(fontSize: 12),
                     ),
-                  )
-                ],
-                const SizedBox(height: 10),
-                TextField(
-                  controller: passwordController,
-                  obscureText: !_pwdVisibility,
-                  decoration: passwordFieldDecoration(
-                      hintText: 'Enter your password',
-                      obscureText: !_pwdVisibility,
-                      onToggleVisibility: () {
-                        setState(() {
-                          _pwdVisibility = !_pwdVisibility;
-                        });
-                      }),
-                ),
-                if (_isSignInFailed) ...[
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      '* Invalid email or password.',
-                      style: TextStyle(color: Colors.red),
-                    ),
-                  )
-                ],
-                if (!_passwordValid) ...[
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      '* Password must be 6-32 characters long and include '
-                      'uppercase letters, lowercase letters, and numbers.',
-                      style: TextStyle(color: Colors.red),
-                    ),
-                  )
-                ],
-                const SizedBox(height: 10),
-                if (!isLogin) ...[
-                  TextField(
-                    controller: confirmPasswordController,
-                    obscureText: !_cfPwdVisibility,
-                    decoration: passwordFieldDecoration(
-                        hintText: 'Confirm your password',
-                        obscureText: !_cfPwdVisibility,
-                        onToggleVisibility: () {
-                          setState(() {
-                            _cfPwdVisibility = !_cfPwdVisibility;
-                          });
-                        }),
-                  ),
-                  if (!isLogin && !_cfPasswordValid) ...[
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        '* Confirm password is not correct.',
-                        style: TextStyle(color: Colors.red),
-                      ),
-                    )
                   ],
-                  const SizedBox(height: 10),
-                ],
-                const SizedBox(height: 20),
-
-                // Submit Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: submitData,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryBlue,
-                      padding: const EdgeInsets.all(20),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30.0),
-                      ),
-                    ),
-                    child: Text(
-                      isLogin ? 'Login' : 'Register',
-                      style: const TextStyle(
-                        fontSize: 16.0,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
+                )
                 // Switch between Login and Register
-                TextButton(
-                  onPressed: () {
-                    isLogin ? context.go('/register') : context.go('/login');
-                  },
-                  child: Text(isLogin
-                      ? "Don't have an account? Register"
-                      : "Already have an account? Login"),
-                ),
-                const SizedBox(height: 20),
-
-                // Privacy Policy Text
-                const Text(
-                  'By continuing, you agree to our Privacy policy',
-                  style: TextStyle(fontSize: 12),
-                ),
               ],
             ),
           ),
-        ),
+        )),
       ),
     );
   }

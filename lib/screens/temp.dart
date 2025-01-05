@@ -5,6 +5,7 @@ import 'package:jarvis_project/models/assistant_model.dart';
 import 'package:jarvis_project/models/conversation_model.dart';
 import 'package:jarvis_project/models/message_model.dart';
 import 'package:jarvis_project/models/thread_model.dart';
+import 'package:jarvis_project/models/user_model.dart';
 import 'package:jarvis_project/services/assistant_service.dart';
 import 'package:jarvis_project/services/chat_service.dart';
 import 'package:jarvis_project/services/prompt_service.dart';
@@ -71,7 +72,7 @@ class _ChatScreenState extends State<ChatScreen> {
       final data = json.decode(response);
 
       // Debug: Check the data being loaded
-      print('Prompts Response: $data');
+      // print('Prompts Response: $data');
 
       setState(() {
         // Handle cases where 'items' might be null
@@ -169,10 +170,15 @@ class _ChatScreenState extends State<ChatScreen> {
     var content = _controller.text;
     if (content.isNotEmpty) {
       try {
-        int timestamp = DateTime.now().millisecondsSinceEpoch;
+        int timestamp = DateTime
+            .now()
+            .millisecondsSinceEpoch;
         setState(() {
           // remove textfield value
           _controller.text = '';
+
+          // switch to chat phase
+          _selectedConIndex = 0;
 
           // add message to message list
           messages.insert(0, Message('user', timestamp, content));
@@ -182,53 +188,61 @@ class _ChatScreenState extends State<ChatScreen> {
         });
 
         if (isBuiltinBot) {
-          // if _selectedConIndex = -1 then create new conversation
-          var conID =
-              _selectedConIndex != -1 ? conList[_selectedConIndex].id : '';
+          if (User.remainingUsage > 0) {
+            // if _selectedConIndex = -1 then create new conversation
+            var conID =
+            _selectedConIndex != -1 ? conList[_selectedConIndex].id : '';
 
-          var response = await _chatService.sendMessage(
-              content, Assistant.currentBot.id, conID);
-          var data = json.decode(response);
-          setState(() {
-            // replace ... with the reply message
-            messages.removeAt(0);
-            messages.insert(
-                0, Message('assistant', timestamp, data['message']));
-          });
-
-          // if create new conversation
-          if (conID.isEmpty) {
-            // create new conversation and reload conversation
-            setState(() async {
-              await _getConList();
-              _selectedConIndex = 0;
+            var response = await _chatService.sendMessage(
+                content, Assistant.currentBot.id, conID);
+            var data = json.decode(response);
+            setState(() {
+              // replace ... with the reply message
+              messages.removeAt(0);
+              messages.insert(
+                  0, Message('assistant', timestamp, data['message']));
             });
-          }
-        } else {
-          // create new thread
-          if (_selectedConIndex == -1) {
-            var isCreated = await _assistantService.createThread(
-              id: Assistant.currentBot.id,
-              message: content,
-            );
 
-            if (isCreated) {
+            User.remainingUsage--;
+            // if create new conversation
+            if (conID.isEmpty) {
+              // create new conversation and reload conversation
               setState(() async {
                 await _getConList();
                 _selectedConIndex = 0;
               });
-            } else {
-              throw Exception('Request failed');
             }
+          } else {
+            // out of usage
+            throw Exception('Out of usage. Please comeback tomorrow.');
+          }
+        } else {
+          // create new thread
+          Thread thread;
+          if (_selectedConIndex == -1) {
+            var response = await _assistantService.createThread(
+              id: Assistant.currentBot.id,
+              message: content,
+            );
+
+            setState(() {
+              _getConList();
+              _selectedConIndex = 0;
+            });
+
+            var data = json.decode(response);
+            thread = Thread(data['openAiThreadId'], data['assistantId'],
+                data['threadName']);
+          } else {
+            thread = conList[_selectedConIndex];
           }
 
-          Thread thread = conList[_selectedConIndex];
           var response = await _assistantService.askAssistant(
               assistantId: thread.assistantId,
               threadId: thread.openAiThreadId,
               message: content);
 
-          print(response.toString());
+          print(response);
           setState(() {
             // replace ... with the reply message
             messages.removeAt(0);
@@ -263,73 +277,83 @@ class _ChatScreenState extends State<ChatScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final RenderBox renderBox = context.findRenderObject() as RenderBox;
       final Offset textFieldOffset = renderBox.localToGlobal(Offset.zero);
-      final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+      final bottomInset = MediaQuery
+          .of(context)
+          .viewInsets
+          .bottom;
 
       final overlay = Overlay.of(context);
 
       // Create OverlayEntry
       _overlayEntry = OverlayEntry(
-        builder: (context) => Positioned(
-          left: 16,
-          right: 16,
-          bottom: MediaQuery.of(context).size.height -
-              textFieldOffset.dy -
-              renderBox.size.height -
-              bottomInset +
-              60,
-          child: Material(
-            elevation: 4,
-            borderRadius: BorderRadius.circular(8),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxHeight: 200, // Limit the height of the overlay
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
+        builder: (context) =>
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: MediaQuery
+                  .of(context)
+                  .size
+                  .height -
+                  textFieldOffset.dy -
+                  renderBox.size.height -
+                  bottomInset +
+                  60,
+              child: Material(
+                elevation: 4,
+                borderRadius: BorderRadius.circular(8),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxHeight: 200, // Limit the height of the overlay
+                  ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: Scrollbar(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: filtered.length,
-                    itemBuilder: (context, index) {
-                      final prompt = filtered[index];
+                    child: Scrollbar(
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final prompt = filtered[index];
 
-                      // Ensure prompt fields are not null
-                      final title = prompt['title'] ?? 'Untitled';
-                      final description =
-                          prompt['description'] ?? 'No description available';
-                      final content = prompt['content'] ?? '';
-                      return ListTile(
-                        title: Text(title),
-                        subtitle: Text(description),
-                        onTap: () {
-                          // Replace the current text with the prompt content
-                          _controller.text = _controller.text.replaceAll(
-                            RegExp(r'/\w*$'),
-                            content,
+                          // Ensure prompt fields are not null
+                          final title = prompt['title'] ?? 'Untitled';
+                          final description =
+                              prompt['description'] ??
+                                  'No description available';
+                          final content = prompt['content'] ?? '';
+                          return ListTile(
+                            title: Text(title),
+                            subtitle: Text(description),
+                            onTap: () {
+                              // Replace the current text with the prompt content
+                              _controller.text = _controller.text.replaceAll(
+                                RegExp(r'/\w*$'),
+                                content,
+                              );
+                              _controller.selection =
+                                  TextSelection.fromPosition(
+                                    TextPosition(
+                                        offset: _controller.text.length),
+                                  );
+                              _removePromptOverlay(); // Close the overlay
+                            },
                           );
-                          _controller.selection = TextSelection.fromPosition(
-                            TextPosition(offset: _controller.text.length),
-                          );
-                          _removePromptOverlay(); // Close the overlay
                         },
-                      );
-                    },
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ),
       );
 
       overlay.insert(_overlayEntry!);
@@ -354,62 +378,65 @@ class _ChatScreenState extends State<ChatScreen> {
       drawer: Drawer(
         child: SafeArea(
             child: Column(
-          children: [
-            // New chat button above
-            Container(
-                color: Colors.blue,
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'New Chat',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.add, color: Colors.white),
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        setState(() {
-                          _selectedConIndex = -1;
+              children: [
+                // New chat button above
+                Container(
+                    color: Colors.blue,
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'New Chat',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.add, color: Colors.white),
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            setState(() {
+                              _selectedConIndex = -1;
+                              messages.clear();
+                            });
+                          },
+                        ),
+                      ],
+                    )),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: conList.length,
+                    itemBuilder: (context, index) {
+                      final item = conList[index];
+                      final isSelected = index == _selectedConIndex;
+                      return ListTile(
+                        // set background color for selected item
+                        tileColor: isSelected
+                            ? Colors.blue.withOpacity(0.2)
+                            : null,
+                        title: Text(
+                            isBuiltinBot ? item.title : item.threadName),
+                        onTap: () async {
+                          Navigator.of(context).pop(); // close Drawer
+                          setState(() {
+                            _isLoading = true;
+                            _selectedConIndex = index;
+                          });
                           messages.clear();
-                        });
-                      },
-                    ),
-                  ],
-                )),
-            Expanded(
-              child: ListView.builder(
-                itemCount: conList.length,
-                itemBuilder: (context, index) {
-                  final item = conList[index];
-                  final isSelected = index == _selectedConIndex;
-                  return ListTile(
-                    // set background color for selected item
-                    tileColor: isSelected ? Colors.blue.withOpacity(0.2) : null,
-                    title: Text(isBuiltinBot ? item.title : item.threadName),
-                    onTap: () async {
-                      Navigator.of(context).pop(); // close Drawer
-                      setState(() {
-                        _isLoading = true;
-                        _selectedConIndex = index;
-                      });
-                      messages.clear();
-                      await _getMessages();
-                      setState(() {
-                        _isLoading = false;
-                      });
+                          await _getMessages();
+                          setState(() {
+                            _isLoading = false;
+                          });
+                        },
+                      );
                     },
-                  );
-                },
-              ),
-            )
-          ],
-        )),
+                  ),
+                )
+              ],
+            )),
       ),
       body: _buildBody(),
     );
@@ -423,62 +450,86 @@ class _ChatScreenState extends State<ChatScreen> {
       return Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Expanded(
-            child: ListView.builder(
-              reverse: true,
-              itemCount: messages.length,
-              itemBuilder: (ctx, index) {
-                final message = messages[index];
-                final isUserMessage = message.role == 'user';
+          if (_selectedConIndex == -1)
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundImage: AssetImage(Assistant.currentBot.image),
+                  ),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  const Text(
+                    'Hello, May I help you?',
+                    style: TextStyle(fontSize: 20),
+                  )
+                ],
+              ),
+            ),
+          if (_selectedConIndex != -1)
+            Expanded(
+              child: ListView.builder(
+                reverse: true,
+                itemCount: messages.length,
+                itemBuilder: (ctx, index) {
+                  final message = messages[index];
+                  final isUserMessage = message.role == 'user';
 
-                return Container(
-                  alignment: isUserMessage
-                      ? Alignment.centerRight
-                      : Alignment.centerLeft,
-                  margin: const EdgeInsets.all(8.0),
-                  child: IntrinsicWidth(
-                    child: Container(
-                      constraints: BoxConstraints(
-                          maxWidth: MediaQuery.of(context).size.width * 0.7),
-                      decoration: BoxDecoration(
-                          color: isUserMessage
-                              ? Colors.lightBlueAccent.withOpacity(0.2)
-                              : Colors.grey.withOpacity(0.2),
-                          borderRadius: BorderRadius.only(
-                            topLeft: const Radius.circular(16.0),
-                            topRight: const Radius.circular(16.0),
-                            bottomLeft: isUserMessage
-                                ? const Radius.circular(16.0)
-                                : Radius.zero,
-                            bottomRight: isUserMessage
-                                ? Radius.zero
-                                : const Radius.circular(16.0),
-                          )),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 8.0, horizontal: 16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (!isUserMessage)
-                              const Text(
-                                'AI',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 14),
-                              ),
-                            Text(
-                              message.content,
-                              style: const TextStyle(fontSize: 14),
-                            )
-                          ],
+                  return Container(
+                    alignment: isUserMessage
+                        ? Alignment.centerRight
+                        : Alignment.centerLeft,
+                    margin: const EdgeInsets.all(8.0),
+                    child: IntrinsicWidth(
+                      child: Container(
+                        constraints: BoxConstraints(
+                            maxWidth: MediaQuery
+                                .of(context)
+                                .size
+                                .width * 0.7),
+                        decoration: BoxDecoration(
+                            color: isUserMessage
+                                ? Colors.lightBlueAccent.withOpacity(0.2)
+                                : Colors.grey.withOpacity(0.2),
+                            borderRadius: BorderRadius.only(
+                              topLeft: const Radius.circular(16.0),
+                              topRight: const Radius.circular(16.0),
+                              bottomLeft: isUserMessage
+                                  ? const Radius.circular(16.0)
+                                  : Radius.zero,
+                              bottomRight: isUserMessage
+                                  ? Radius.zero
+                                  : const Radius.circular(16.0),
+                            )),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 8.0, horizontal: 16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (!isUserMessage)
+                                const Text(
+                                  'AI',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14),
+                                ),
+                              Text(
+                                message.content,
+                                style: const TextStyle(fontSize: 14),
+                              )
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
-          ),
           textInputBox()
         ],
       );
@@ -490,47 +541,12 @@ class _ChatScreenState extends State<ChatScreen> {
         margin: const EdgeInsets.all(8.0),
         child: Column(
           children: [
-            Row(
-              children: [
-                // TODO ai select
-                FilledButton.tonal(
-                  onPressed: () {},
-                  style: ButtonStyle(
-                      elevation: const WidgetStatePropertyAll(0),
-                      backgroundColor:
-                          WidgetStatePropertyAll(Colors.grey.shade200)),
-                  child: const Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 12.0,
-                        backgroundColor: Colors.blue,
-                        child: Text(
-                          'M',
-                          style: TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      SizedBox(width: 8.0),
-                      // Tên
-                      Text(
-                        'Monica',
-                        style: TextStyle(
-                            fontSize: 14.0, fontWeight: FontWeight.w500),
-                      ),
-                      Icon(Icons.arrow_drop_down)
-                    ],
-                  ),
-                ),
-
-                // Avatar
-              ],
-            ),
             const SizedBox(
               height: 8.0,
             ),
             Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+                const EdgeInsets.symmetric(horizontal: 12.0, vertical: 2.0),
                 decoration: BoxDecoration(
                   border: _isTextInputFocus
                       ? Border.all(color: Colors.purple, width: 0.5)
@@ -562,7 +578,8 @@ class _ChatScreenState extends State<ChatScreen> {
                         controller: _controller,
                         decoration: const InputDecoration(
                             hintText: 'Ask me anything...',
-                            border: InputBorder.none),
+                            border: InputBorder.none,
+                            isDense: true),
                       ),
                     ),
                     const SizedBox(width: 8.0),

@@ -49,6 +49,23 @@ final class ApiService {
     }
   }
 
+  // get usage
+  Future<http.Response> getUsage() async {
+    // url
+    var url = baseURL + authEndpoints['getUsage']!;
+
+    // request
+    try {
+      final response = await http.get(Uri.parse(url), headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${User.refreshToken}'
+      });
+      return response;
+    } catch (e) {
+      throw Exception('Request Failed: $e');
+    }
+  }
+
   // refresh token
   Future<http.Response> refreshToken() async {
     // url
@@ -140,8 +157,8 @@ final class ApiService {
   }
 
   // load conversation
-  Future<http.Response> loadConversation(
-      String id, Map<String, String> param) async {
+  Future<http.Response> loadConversation(String id,
+      Map<String, String> param) async {
     // url
     var url = baseURL + chatEndpoints['getConversationHistory']!;
 
@@ -165,8 +182,6 @@ final class ApiService {
     // url
     var url = baseURL + promptEndpoints['getPrompt']!;
 
-    print(param);
-    print(param.runtimeType);
     // request
     try {
       final response = await http
@@ -262,8 +277,8 @@ final class ApiService {
   }
 
   // update prompt
-  Future<http.Response> updatePrompt(
-      String id, Map<String, dynamic> data) async {
+  Future<http.Response> updatePrompt(String id,
+      Map<String, dynamic> data) async {
     // url
     var url = baseURL + promptEndpoints['updatePrompt']!;
 
@@ -360,8 +375,8 @@ final class ApiService {
   }
 
   // update assistant
-  Future<http.Response> updateAssistant(
-      String id, Map<String, dynamic> data) async {
+  Future<http.Response> updateAssistant(String id,
+      Map<String, dynamic> data) async {
     // url
     var url = kbURL + aiEndpoints['updateAssistant']!;
 
@@ -440,8 +455,8 @@ final class ApiService {
   }
 
   // ask assistant
-  Future<http.Response> askAssistant(
-      String id, Map<String, dynamic> data) async {
+  Future<http.Response> askAssistant(String id,
+      Map<String, dynamic> data) async {
     // url
     var url = kbURL + aiEndpoints['chat']!;
 
@@ -454,6 +469,66 @@ final class ApiService {
           'Authorization': 'Bearer ${User.kbAccessToken}'
         },
         body: json.encode(data),
+      );
+      return response;
+    } catch (e) {
+      throw Exception('Request Failed: $e');
+    }
+  }
+
+  // get ai knowledge base
+  Future<http.Response> getAssistantKnowledge(String id) async {
+    // url
+    var url = kbURL + aiEndpoints['getImportedKnowledge']!;
+
+    // request
+    try {
+      final response =
+      await http.get(Uri.parse('$url$id/knowledges'), headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${User.kbAccessToken}'
+      });
+      return response;
+    } catch (e) {
+      throw Exception('Request Failed: $e');
+    }
+  }
+
+  // add kb to assistant
+  Future<http.Response> addKnowledgeToAssistant(String botID,
+      String kbID) async {
+    // url
+    var url = kbURL + aiEndpoints['addKnowledgeToBot']!;
+
+    // request
+    try {
+      final response = await http.post(
+        Uri.parse('$url$botID/knowledges/$kbID'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${User.kbAccessToken}'
+        },
+      );
+      return response;
+    } catch (e) {
+      throw Exception('Request Failed: $e');
+    }
+  }
+
+  // delete kb from assistant
+  Future<http.Response> deleteKnowledgeFromAssistant(String botID,
+      String kbID) async {
+    // url
+    var url = kbURL + aiEndpoints['removeKnowledgeFromBot']!;
+
+    // request
+    try {
+      final response = await http.delete(
+        Uri.parse('$url$botID/knowledges/$kbID'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${User.kbAccessToken}'
+        },
       );
       return response;
     } catch (e) {
@@ -521,8 +596,8 @@ final class ApiService {
   }
 
   // update knowledge
-  Future<http.Response> updateKnowledge(
-      String id, Map<String, dynamic> data) async {
+  Future<http.Response> updateKnowledge(String id,
+      Map<String, dynamic> data) async {
     // url
     var url = kbURL + kbEndpoints['updateKnowledge']!;
 
@@ -560,8 +635,8 @@ final class ApiService {
   }
 
   // add website
-  Future<http.Response> addWebsiteToKnowledge(
-      String id, Map<String, dynamic> data) async {
+  Future<http.Response> addWebsiteToKnowledge(String id,
+      Map<String, dynamic> data) async {
     // url
     var url = kbURL + kbEndpoints['addWebsite']!;
 
@@ -589,7 +664,7 @@ final class ApiService {
     // request
     try {
       var request =
-          http.MultipartRequest('POST', Uri.parse('$url$id/local-file'));
+      http.MultipartRequest('POST', Uri.parse('$url$id/local-file'));
 
       var fileBytes = await file.readAsBytes();
       var mimeType = lookupMimeType(file.path);
@@ -597,7 +672,9 @@ final class ApiService {
           mimeType?.split('/') ?? ['application', 'octet-stream'];
 
       var multipartFile = http.MultipartFile.fromBytes('file', fileBytes,
-          filename: file.path.split('/').last,
+          filename: file.path
+              .split('/')
+              .last,
           contentType: MediaType(mimeTypeSplit[0], mimeTypeSplit[1]));
       request.files.add(multipartFile);
       request.headers.addAll({
@@ -615,8 +692,8 @@ final class ApiService {
   }
 
   // add data from slack
-  Future<http.Response> addDataFromSlack(
-      String id, Map<String, dynamic> data) async {
+  Future<http.Response> addDataFromSlack(String id,
+      Map<String, dynamic> data) async {
     // url
     var url = kbURL + kbEndpoints['addSlack']!;
 
@@ -637,8 +714,8 @@ final class ApiService {
   }
 
   // add data from slack
-  Future<http.Response> addDataFromConfluence(
-      String id, Map<String, dynamic> data) async {
+  Future<http.Response> addDataFromConfluence(String id,
+      Map<String, dynamic> data) async {
     // url
     var url = kbURL + kbEndpoints['addConfluence']!;
 

@@ -275,8 +275,9 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                     context: context,
                     builder: (context) {
                       bool isAPICalled = false;
+
                       return StatefulBuilder(builder: (context, setState) {
-                        Future<void> _getKnowledgeUnit(String id) async {
+                        Future<void> getKnowledgeUnit(String id) async {
                           try {
                             setState(() {
                               isUnitLoading = true;
@@ -303,12 +304,10 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                           }
                         }
 
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (!isAPICalled) {
-                            isAPICalled = true;
-                            _getKnowledgeUnit(kb.id);
-                          }
-                        });
+                        if (!isAPICalled) {
+                          isAPICalled = true;
+                          getKnowledgeUnit(kb.id);
+                        }
 
                         return _buildDialog(context, setState, 'view',
                             knowledge: kb);

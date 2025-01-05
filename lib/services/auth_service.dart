@@ -12,7 +12,7 @@ class AuthService {
   Future<bool> signIn(String email, String password) async {
     try {
       final response =
-          await apiService.signIn({'email': email, 'password': password});
+      await apiService.signIn({'email': email, 'password': password});
 
       var data = json.decode(response.body);
       print(data);
@@ -100,6 +100,8 @@ class AuthService {
   Future<bool> getUser() async {
     try {
       if (await isSignedIn()) {
+        User.isSignedIn = true;
+
         String? token = await _secureStorageService.getToken('refreshToken');
         if (token != null && token.isNotEmpty) {
           User.refreshToken = token;
@@ -110,6 +112,7 @@ class AuthService {
         User.init(userInf['id'], userInf['username'], userInf['email']);
 
         await kbSignIn();
+        await getUsage();
         return true;
       } else {
         return false;
@@ -127,6 +130,23 @@ class AuthService {
       //   var newToken =
       //       json.decode(requestNewToken.body)['token']['accessToken'];
       // }
+    } catch (e) {
+      throw Exception(e);
+    }
+  }
+
+  // get usage
+  Future<void> getUsage() async {
+    try {
+      var response = await apiService.getUsage();
+
+      var data = json.decode(response.body);
+
+      User.remainingUsage = data['availableTokens'];
+      User.unlimited = data['unlimited'];
+
+      print(User.remainingUsage);
+      print(User.unlimited);
     } catch (e) {
       throw Exception(e);
     }

@@ -506,7 +506,7 @@ class _PromptScreenState extends State<PromptScreen> {
                         },
                       ),
                       const Text(
-                        'Private Prompt',
+                        'Private',
                         style: TextStyle(fontSize: 12),
                       ),
                       const SizedBox(
@@ -522,7 +522,7 @@ class _PromptScreenState extends State<PromptScreen> {
                         },
                       ),
                       const Text(
-                        'Public Prompt',
+                        'Public',
                         style: TextStyle(fontSize: 12),
                       ),
                     ],

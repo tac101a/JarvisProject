@@ -3,7 +3,8 @@ const authEndpoints = {
   'signUp': '/api/v1/auth/sign-up',
   'signOut': '/api/v1/auth/sign-out',
   'getUser': '/api/v1/auth/me',
-  'refreshToken': '/api/v1/auth/refresh'
+  'refreshToken': '/api/v1/auth/refresh',
+  'getUsage': '/api/v1/tokens/usage'
 };
 
 const chatEndpoints = {
@@ -31,6 +32,9 @@ const aiEndpoints = {
   'createThread': '/kb-core/v1/ai-assistant/thread',
   'getMessages': '/kb-core/v1/ai-assistant/thread/',
   'chat': '/kb-core/v1/ai-assistant/',
+  'getImportedKnowledge': '/kb-core/v1/ai-assistant/',
+  'addKnowledgeToBot': '/kb-core/v1/ai-assistant/',
+  'removeKnowledgeFromBot': '/kb-core/v1/ai-assistant/'
 };
 
 const kbEndpoints = {

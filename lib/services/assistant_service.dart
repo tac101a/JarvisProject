@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:jarvis_project/services/api_service.dart';
 
 import '../models/assistant_model.dart';
@@ -85,7 +87,7 @@ class AssistantService {
   }
 
   // create thread
-  Future<bool> createThread(
+  Future<String> createThread(
       {required String id, required String message}) async {
     try {
       final response = await apiService.createThread({
@@ -94,9 +96,9 @@ class AssistantService {
       });
 
       if (response.statusCode == 201) {
-        return true;
+        return response.body;
       } else {
-        return false;
+        throw Exception('Request failed');
       }
     } catch (e) {
       throw Exception(e);
@@ -142,14 +144,58 @@ class AssistantService {
         'openAiThreadId': threadId,
       });
 
-      var data = response.body;
-      print(data);
-      print(response.body);
+      if (response.statusCode == 200) {
+        return utf8.decode(response.bodyBytes);
+      } else {
+        throw Exception('Request Failed');
+      }
+    } catch (e) {
+      throw Exception(e);
+    }
+  }
+
+  // get assistant knowledge
+  Future<String> getAssistantKnowledge(String id) async {
+    try {
+      final response = await apiService.getAssistantKnowledge(id);
 
       if (response.statusCode == 200) {
         return response.body;
       } else {
-        throw Exception('Request Failed');
+        throw Exception('Request failed');
+      }
+    } catch (e) {
+      throw Exception(e);
+    }
+  }
+
+  // add kb to assistant
+  Future<bool> addKnowledgeToAssistant(
+      {required String botID, required String kbID}) async {
+    try {
+      final response = await apiService.addKnowledgeToAssistant(botID, kbID);
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      throw Exception(e);
+    }
+  }
+
+  // delete knowledge from assistant
+  Future<bool> deleteKnowledgeFromAssistant(
+      {required String botID, required String kbID}) async {
+    try {
+      final response =
+          await apiService.deleteKnowledgeFromAssistant(botID, kbID);
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        return false;
       }
     } catch (e) {
       throw Exception(e);
