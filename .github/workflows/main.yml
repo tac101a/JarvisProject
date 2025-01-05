@@ -31,7 +31,7 @@ jobs:
 
       - name: Set up keystore
         run: |
-          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/keystore.jks
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/my-release-key.jks
           echo "$KEY_PROPERTIES_CONTENT" > android/key.properties
 
       - name: Build release
