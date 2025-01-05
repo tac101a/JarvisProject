@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:jarvis_project/screens/sidebar.dart';
-import 'package:jarvis_project/screens/temp.dart';
+import 'package:jarvis_project/screens/chat_screen.dart';
 import 'package:jarvis_project/screens/prompt_screen.dart';
 import 'package:jarvis_project/screens/bot_management.dart';
 import 'package:jarvis_project/screens/knowledge_base.dart';
