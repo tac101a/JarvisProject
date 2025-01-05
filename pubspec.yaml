@@ -38,7 +38,7 @@ dependencies:
   mime: ^2.0.0
   url_launcher: ^6.3.1
   flutter_native_splash: ^2.4.4
-
+  cupertino_icons: ^1.0.8
   dio: ^5.7.0
 
   # The following adds the Cupertino Icons font to your application.
@@ -131,6 +131,10 @@ flutter_native_splash:
     branding: lib/assets/branding.png
 
 flutter_launcher_icons:
-  ios: true
-  android: true
+  android: "launcher_icon"
+  ios: false
   image_path: "lib/assets/android_logo.png"
+  adaptive_icon_foreground: "lib/assets/android_logo.png"
+  adaptive_icon_background: "#FFF"
+  remove_alpha_ios: true
+  min_sdk_android: 21
