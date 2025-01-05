@@ -8,6 +8,8 @@ import 'package:jarvis_project/models/thread_model.dart';
 import 'package:jarvis_project/services/assistant_service.dart';
 import 'package:jarvis_project/services/chat_service.dart';
 import 'package:jarvis_project/services/prompt_service.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class ChatScreen extends StatefulWidget {
   // constructor
@@ -345,6 +347,61 @@ class _ChatScreenState extends State<ChatScreen> {
     _isPromptOverlayVisible = false;
   }
 
+  // Function to handle image picker options
+  void _showImagePickerOptions() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo),
+              title: const Text('Upload Image'),
+              onTap: () {
+                Navigator.pop(context); // Close bottom sheet
+                _pickImage(ImageSource.gallery); // Upload image from gallery
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Capture Image'),
+              onTap: () {
+                Navigator.pop(context); // Close bottom sheet
+                _pickImage(ImageSource.camera); // Capture image with camera
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> requestPermissions() async {
+    await [
+      Permission.camera,
+      Permission.photos, // iOS
+      Permission.storage // Android
+    ].request();
+  }
+
+// Use image_picker to pick an image
+  Future<void> _pickImage(ImageSource source) async {
+    requestPermissions();
+    final ImagePicker _picker = ImagePicker();
+    final XFile? image = await _picker.pickImage(source: source);
+
+    if (image != null) {
+      // Send the selected image to the backend
+      _sendImageToChat(image);
+    }
+  }
+
+// Function to send the selected image
+  Future<void> _sendImageToChat(XFile imageFile) async {
+    print('Image sent: ${imageFile.path}');
+    // TODO: Implement image upload and chat processing
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -540,6 +597,13 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 child: Row(
                   children: [
+                    IconButton(
+                      onPressed: () {
+                        _showImagePickerOptions(); // Function to handle image picker options
+                      },
+                      icon: const Icon(Icons.add_circle_outline),
+                      color: Colors.grey,
+                    ),
                     Expanded(
                       child: TextField(
                         minLines: 1,
