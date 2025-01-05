@@ -44,3 +44,8 @@ const kbEndpoints = {
   'addSlack': '/kb-core/v1/knowledge/',
   'addConfluence': '/kb-core/v1/knowledge/'
 };
+
+const emailEndpoints = {
+  'responseEmail': '/api/v1/ai-email',
+  'suggestReply': '/api/v1/ai-email/reply-ideas'
+};

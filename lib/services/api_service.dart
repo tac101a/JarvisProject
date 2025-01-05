@@ -657,4 +657,40 @@ final class ApiService {
       throw Exception('Request Failed: $e');
     }
   }
+
+  Future<http.Response> responseEmail(Map<String, dynamic> body) async {
+    var url = baseURL + emailEndpoints['responseEmail']!;
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${User.refreshToken}',
+          'x-jarvis-guid': '' // Add valid GUID if required
+        },
+        body: json.encode(body),
+      );
+      return response;
+    } catch (e) {
+      throw Exception('Response Email API failed: $e');
+    }
+  }
+
+  Future<http.Response> suggestReplyIdeas(Map<String, dynamic> body) async {
+    var url = baseURL + emailEndpoints['suggestReply']!;
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${User.refreshToken}',
+          'x-jarvis-guid': '' // Add valid GUID if required
+        },
+        body: json.encode(body),
+      );
+      return response;
+    } catch (e) {
+      throw Exception('Suggest Reply Ideas API failed: $e');
+    }
+  }
 }

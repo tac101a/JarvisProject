@@ -4,6 +4,7 @@ import 'package:jarvis_project/screens/temp.dart';
 import 'package:jarvis_project/screens/prompt_screen.dart';
 import 'package:jarvis_project/screens/bot_management.dart';
 import 'package:jarvis_project/screens/knowledge_base.dart';
+import 'package:jarvis_project/screens/mail_screen.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -47,6 +48,7 @@ class _HomePageState extends State<HomePage> {
         onPromptSelect: _onIconTap,
       ),
       const KnowledgeBaseScreen(),
+      const MailScreen()
     ];
   }
 

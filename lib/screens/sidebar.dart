@@ -50,6 +50,7 @@ class _SidebarState extends State<Sidebar> {
               _buildIcon(1, Icons.smart_toy, 'Assistant'),
               _buildIcon(2, Icons.edit_note, 'Prompt'),
               _buildIcon(3, Icons.menu_book, 'KB Store'),
+              _buildIcon(4, Icons.mail, 'AI Mail'),
             ],
           ),
           Padding(
