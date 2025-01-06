@@ -37,12 +37,6 @@ jobs:
           echo "$KEYSTORE_BASE64" | base64 --decode > android/app/my-release-key.jks
           echo "$KEY_PROPERTIES_CONTENT" > android/key.properties
 
-      - name: Verify keystore file
-        run: ls -l android/app/my-release-key.jks
-
-      - name: Verify key.properties file
-        run: cat android/key.properties
-
       - name: Build release
         run: flutter build appbundle --release
 
@@ -51,3 +45,13 @@ jobs:
         with:
           name: app-release
           path: build/app/outputs/bundle/release/app-release.aab
+
+      - name: Build Flutter Web
+        run: flutter build web --release
+
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_LUNA_AI_CHATBOT }}
+          projectId: luna-ai-chatbot
