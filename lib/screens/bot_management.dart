@@ -84,8 +84,8 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
             id: item['id'],
             name: item['assistantName'],
             type: 'custom',
-            instruction: item['instructions'],
-            description: item['description']));
+            instruction: item['instructions'] ?? '',
+            description: item['description'] ?? ''));
       }
 
       setState(() {
@@ -213,16 +213,16 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
                         itemBuilder: (context, index) {
                           return Padding(
                             padding:
-                            const EdgeInsets.symmetric(horizontal: 4.0),
+                                const EdgeInsets.symmetric(horizontal: 4.0),
                             child: ChoiceChip(
                               label: Text(_assistantType[index]),
                               selected: _selectedType == index,
                               onSelected: (bool selected) {
                                 setState(() {
                                   _selectedType =
-                                  selected ? index : _selectedType;
+                                      selected ? index : _selectedType;
                                   showingList =
-                                  index == 0 ? builtinBots : customBots;
+                                      index == 0 ? builtinBots : customBots;
                                 });
                               },
                               shape: RoundedRectangleBorder(
@@ -248,196 +248,191 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
         if (!isLoading && showingList.isEmpty) // if list is empty
           const Center(
               child: Text(
-                'Empty list',
-                style: TextStyle(color: Colors.grey),
-              )),
+            'Empty list',
+            style: TextStyle(color: Colors.grey),
+          )),
         if (!isLoading && showingList.isNotEmpty) ...[
           Flexible(
               child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: showingList.length,
-                itemBuilder: (context, index) {
-                  final bot = showingList[index];
+            shrinkWrap: true,
+            itemCount: showingList.length,
+            itemBuilder: (context, index) {
+              final bot = showingList[index];
 
-                  return ListTile(
-                    title: Text(bot.name),
-                    leading: CircleAvatar(
-                      radius: 13,
-                      backgroundImage: AssetImage(bot.image),
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // edit button
-                        if (_selectedType == 1)
-                          IconButton(
-                            icon: const Icon(Icons.edit),
-                            onPressed: () {
-                              // Edit prompt
-                              setState(() {
-                                dialogNameController.text = bot.name;
-                                dialogInstructionController.text =
-                                    bot.instruction;
-                                dialogDescriptionController.text =
-                                    bot.description;
-                              });
+              return ListTile(
+                title: Text(bot.name),
+                leading: CircleAvatar(
+                  radius: 13,
+                  backgroundImage: AssetImage(bot.image),
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // edit button
+                    if (_selectedType == 1)
+                      IconButton(
+                        icon: const Icon(Icons.edit),
+                        onPressed: () {
+                          // Edit prompt
+                          setState(() {
+                            dialogNameController.text = bot.name;
+                            dialogInstructionController.text = bot.instruction;
+                            dialogDescriptionController.text = bot.description;
+                          });
 
-                              showDialog(
-                                context: context,
-                                builder: (context) {
-                                  return StatefulBuilder(
-                                      builder: (context, setState) {
-                                        return _buildDialog(
-                                            context, setState, 'update',
-                                            assistant: bot);
-                                      });
-                                },
-                              ).then((result) {
-                                resetDialogState();
+                          showDialog(
+                            context: context,
+                            builder: (context) {
+                              return StatefulBuilder(
+                                  builder: (context, setState) {
+                                return _buildDialog(context, setState, 'update',
+                                    assistant: bot);
                               });
                             },
-                          ),
-                        // delete button
-                        if (_selectedType == 1)
-                          IconButton(
-                            icon: const Icon(Icons.delete),
-                            onPressed: () {
-                              showDialog(
-                                  context: context,
-                                  builder: (context) {
-                                    return AlertDialog(
-                                      title: dialogTitle('Delete Prompt',
-                                          color: Colors.red),
-                                      content: const Text(
-                                        'Are you sure?',
-                                        textAlign: TextAlign.center,
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.pop(context);
-                                          },
-                                          child: const Text('Cancel'),
-                                        ),
-                                        TextButton(
-                                          style: const ButtonStyle(
-                                              backgroundColor:
-                                              WidgetStatePropertyAll(
-                                                  Colors.red)),
-                                          onPressed: () {
-                                            _deleteBot(bot.id);
-                                            Navigator.pop(context);
-                                          },
-                                          child: const Text(
-                                            'Delete',
-                                            style: TextStyle(
-                                                color: Colors.white),
-                                          ),
-                                        ),
-                                      ],
-                                    );
-                                  });
-                            },
-                          ),
-                        // favorite button
-                      ],
-                    ),
-                    onTap: () async {
-                      showDialog(
-                        context: context,
-                        builder: (context) {
-                          bool isAPICalled = false;
-
-                          return StatefulBuilder(builder: (context, setState) {
-                            if (bot.type == 'custom') {
-                              Future<void> getAssistantKnowledge(
-                                  String id) async {
-                                try {
-                                  var response = await _assistantService
-                                      .getAssistantKnowledge(id);
-                                  var data = json.decode(response);
-
-                                  List<dynamic> temp = [];
-                                  for (var item in data['data']) {
-                                    temp.add(Knowledge(
-                                        id: item['id'],
-                                        name: item['knowledgeName'],
-                                        description: item['description']));
-
-                                    setState(() {
-                                      botKBList = temp;
-                                    });
-                                  }
-                                } catch (e) {
-                                  showErrorModal(context, e.toString());
-                                }
-                              }
-
-                              Future<void> getKnowledgeList() async {
-                                try {
-                                  var response =
-                                  await _knowledgeService.getKnowledge();
-                                  var data = json.decode(response);
-
-                                  List<dynamic> temp = [];
-                                  for (var item in data['data']) {
-                                    temp.add(Knowledge(
-                                        id: item['id'],
-                                        name: item['knowledgeName'],
-                                        description: item['description']));
-                                  }
-
-                                  setState(() {
-                                    kbList = temp.where((element) {
-                                      for (var item in botKBList) {
-                                        if (item.id == element.id) {
-                                          return false;
-                                        }
-                                      }
-                                      return true;
-                                    }).toList();
-                                  });
-                                } catch (e) {
-                                  showErrorModal(context, e.toString());
-                                }
-                              }
-
-                              Future<void> apiCall(String id) async {
-                                try {
-                                  setState(() {
-                                    isDialogLoading = true;
-                                  });
-
-                                  await getAssistantKnowledge(id);
-                                  await getKnowledgeList();
-
-                                  if (mounted) {
-                                    setState(() {
-                                      isDialogLoading = false;
-                                    });
-                                  }
-                                } catch (e) {
-                                  showErrorModal(context, e.toString());
-                                }
-                              }
-
-                              if (!isAPICalled) {
-                                isAPICalled = true;
-                                apiCall(bot.id);
-                              }
-                            }
-
-                            return _buildDialog(context, setState, 'view',
-                                assistant: bot);
+                          ).then((result) {
+                            resetDialogState();
                           });
                         },
-                      ).then((result) {
-                        resetDialogState();
+                      ),
+                    // delete button
+                    if (_selectedType == 1)
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: () {
+                          showDialog(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: dialogTitle('Delete Prompt',
+                                      color: Colors.red),
+                                  content: const Text(
+                                    'Are you sure?',
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      style: const ButtonStyle(
+                                          backgroundColor:
+                                              WidgetStatePropertyAll(
+                                                  Colors.red)),
+                                      onPressed: () {
+                                        _deleteBot(bot.id);
+                                        Navigator.pop(context);
+                                      },
+                                      child: const Text(
+                                        'Delete',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              });
+                        },
+                      ),
+                    // favorite button
+                  ],
+                ),
+                onTap: () async {
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      bool isAPICalled = false;
+
+                      return StatefulBuilder(builder: (context, setState) {
+                        if (bot.type == 'custom') {
+                          Future<void> getAssistantKnowledge(String id) async {
+                            try {
+                              var response = await _assistantService
+                                  .getAssistantKnowledge(id);
+                              var data = json.decode(response);
+
+                              List<dynamic> temp = [];
+                              for (var item in data['data']) {
+                                temp.add(Knowledge(
+                                    id: item['id'],
+                                    name: item['knowledgeName'],
+                                    description: item['description']));
+
+                                setState(() {
+                                  botKBList = temp;
+                                });
+                              }
+                            } catch (e) {
+                              showErrorModal(context, e.toString());
+                            }
+                          }
+
+                          Future<void> getKnowledgeList() async {
+                            try {
+                              var response =
+                                  await _knowledgeService.getKnowledge();
+                              var data = json.decode(response);
+
+                              List<dynamic> temp = [];
+                              for (var item in data['data']) {
+                                temp.add(Knowledge(
+                                    id: item['id'],
+                                    name: item['knowledgeName'],
+                                    description: item['description']));
+                              }
+
+                              setState(() {
+                                kbList = temp.where((element) {
+                                  for (var item in botKBList) {
+                                    if (item.id == element.id) {
+                                      return false;
+                                    }
+                                  }
+                                  return true;
+                                }).toList();
+                              });
+                            } catch (e) {
+                              showErrorModal(context, e.toString());
+                            }
+                          }
+
+                          Future<void> apiCall(String id) async {
+                            try {
+                              setState(() {
+                                isDialogLoading = true;
+                              });
+
+                              await getAssistantKnowledge(id);
+                              await getKnowledgeList();
+
+                              if (mounted) {
+                                setState(() {
+                                  isDialogLoading = false;
+                                });
+                              }
+                            } catch (e) {
+                              showErrorModal(context, e.toString());
+                            }
+                          }
+
+                          if (!isAPICalled) {
+                            isAPICalled = true;
+                            apiCall(bot.id);
+                          }
+                        }
+
+                        return _buildDialog(context, setState, 'view',
+                            assistant: bot);
                       });
                     },
-                  );
+                  ).then((result) {
+                    resetDialogState();
+                  });
                 },
-              ))
+              );
+            },
+          ))
         ]
       ],
     );
@@ -487,10 +482,7 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
       content: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 480),
         child: SizedBox(
-          width: MediaQuery
-              .of(context)
-              .size
-              .width * 0.8,
+          width: MediaQuery.of(context).size.width * 0.8,
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -521,7 +513,9 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
                   readOnly: isViewing,
                   enabled: !isViewing,
                   decoration: dialogInputField(
-                      'e.g: You are an assistant of the Jarvis system'),
+                      isViewing && assistant!.instruction.isEmpty
+                          ? 'No instruction'
+                          : 'e.g: You are an assistant of the Jarvis system'),
                 ),
                 const SizedBox(height: 16.0),
                 const Text(
@@ -535,8 +529,10 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
                   controller: dialogDescriptionController,
                   readOnly: isViewing,
                   enabled: !isViewing,
-                  decoration: dialogInputField(
-                      'e.g: This bot is used to ask about the Jarvis system....'),
+                  decoration: dialogInputField(isViewing &&
+                          assistant!.instruction.isEmpty
+                      ? 'No description'
+                      : 'e.g: This bot is used to ask about the Jarvis system....'),
                 ),
                 if (action != 'create' && assistant?.type == 'custom') ...[
                   const SizedBox(height: 16.0),
@@ -550,9 +546,9 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
                     if (botKBList.isEmpty)
                       const Center(
                           child: Text(
-                            'Empty list',
-                            style: TextStyle(color: Colors.grey),
-                          )),
+                        'Empty list',
+                        style: TextStyle(color: Colors.grey),
+                      )),
                     if (botKBList.isNotEmpty)
                       ListView.builder(
                           shrinkWrap: true,
@@ -565,28 +561,30 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
                                 '${index + 1}. ${unit.name}',
                                 style: const TextStyle(fontSize: 12),
                               ),
-                              trailing: IconButton(onPressed: () async {
-                                var response = await _assistantService
-                                    .deleteKnowledgeFromAssistant(
-                                    botID: assistant!.id, kbID: unit.id);
+                              trailing: IconButton(
+                                  onPressed: () async {
+                                    var response = await _assistantService
+                                        .deleteKnowledgeFromAssistant(
+                                            botID: assistant!.id,
+                                            kbID: unit.id);
 
-                                if (mounted) {
-                                  if (response) {
-                                    setState(() {
-                                      kbList.add(unit);
-                                      botKBList.remove(unit);
-                                    });
+                                    if (mounted) {
+                                      if (response) {
+                                        setState(() {
+                                          kbList.add(unit);
+                                          botKBList.remove(unit);
+                                        });
 
-                                    // show snackbar
-                                    ScaffoldMessenger.of(context)
-                                        .showSnackBar(const SnackBar(
-                                        content: Text(
-                                            'Deleted')));
-                                  } else {
-                                    throw Exception('Request failed');
-                                  }
-                                }
-                              }, icon: Icon(Icons.delete)),
+                                        // show snackbar
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(const SnackBar(
+                                                content: Text('Deleted')));
+                                      } else {
+                                        throw Exception('Request failed');
+                                      }
+                                    }
+                                  },
+                                  icon: Icon(Icons.delete)),
                             );
                           }),
                     const Divider(
@@ -599,16 +597,16 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
                     const Text(
                       'Add knowledge',
                       style:
-                      TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                          TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8.0),
                     if (kbList.isEmpty)
                       const Center(
                           child: Text(
-                            'Empty list',
-                            style: TextStyle(color: Colors.grey),
-                          )),
+                        'Empty list',
+                        style: TextStyle(color: Colors.grey),
+                      )),
                     if (kbList.isNotEmpty)
                       ListView.builder(
                           shrinkWrap: true,
@@ -626,8 +624,8 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
                                     try {
                                       await _assistantService
                                           .addKnowledgeToAssistant(
-                                          botID: assistant!.id,
-                                          kbID: kb.id);
+                                              botID: assistant!.id,
+                                              kbID: kb.id);
 
                                       if (mounted) {
                                         setState(() {
@@ -638,8 +636,8 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
                                         // show snackbar
                                         ScaffoldMessenger.of(context)
                                             .showSnackBar(const SnackBar(
-                                            content: Text(
-                                                'Added successfully')));
+                                                content: Text(
+                                                    'Added successfully')));
                                       }
                                     } catch (e) {
                                       showErrorModal(context, e.toString());
@@ -741,28 +739,27 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
         trailing: isPredefined
             ? null // No actions for predefined bots
             : PopupMenuButton<String>(
-          onSelected: (value) {
-            if (value == 'Update') {
-              _showUpdateBotDialog(index!, botName);
-            } else if (value == 'Delete') {
-              setState(() {
-                customBots.removeAt(index!);
-              });
-            } else if (value == 'Preview') {
-              _previewChatWithBot(botName);
-            } else if (value == 'Publish') {
-              _publishBot(botName);
-            }
-          },
-          itemBuilder: (context) =>
-          [
-            const PopupMenuItem(value: 'Update', child: Text('Update')),
-            const PopupMenuItem(value: 'Delete', child: Text('Delete')),
-            const PopupMenuItem(
-                value: 'Preview', child: Text('Preview Chat')),
-            const PopupMenuItem(value: 'Publish', child: Text('Publish')),
-          ],
-        ),
+                onSelected: (value) {
+                  if (value == 'Update') {
+                    _showUpdateBotDialog(index!, botName);
+                  } else if (value == 'Delete') {
+                    setState(() {
+                      customBots.removeAt(index!);
+                    });
+                  } else if (value == 'Preview') {
+                    _previewChatWithBot(botName);
+                  } else if (value == 'Publish') {
+                    _publishBot(botName);
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(value: 'Update', child: Text('Update')),
+                  const PopupMenuItem(value: 'Delete', child: Text('Delete')),
+                  const PopupMenuItem(
+                      value: 'Preview', child: Text('Preview Chat')),
+                  const PopupMenuItem(value: 'Publish', child: Text('Publish')),
+                ],
+              ),
         onTap: () {
           if (!isPredefined) {
             _manageBotKnowledge(botName);
@@ -812,20 +809,19 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            Scaffold(
-              appBar: AppBar(
-                title: Text('Manage Knowledge for $botName'),
-              ),
-              body: Center(
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Add or remove knowledge to/from the bot
-                  },
-                  child: const Text('Add/Remove Knowledge'),
-                ),
-              ),
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            title: Text('Manage Knowledge for $botName'),
+          ),
+          body: Center(
+            child: ElevatedButton(
+              onPressed: () {
+                // Add or remove knowledge to/from the bot
+              },
+              child: const Text('Add/Remove Knowledge'),
             ),
+          ),
+        ),
       ),
     );
   }
