@@ -30,9 +30,18 @@ jobs:
         run: flutter pub run flutter_launcher_icons:main
 
       - name: Set up keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEY_PROPERTIES_CONTENT: ${{ secrets.KEY_PROPERTIES_CONTENT }}
         run: |
-          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/keystore.jks
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/my-release-key.jks
           echo "$KEY_PROPERTIES_CONTENT" > android/key.properties
+
+      - name: Verify keystore file
+        run: ls -l android/app/my-release-key.jks
+
+      - name: Verify key.properties file
+        run: cat android/key.properties
 
       - name: Build release
         run: flutter build appbundle --release
