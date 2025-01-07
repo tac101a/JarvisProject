@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jarvis_project/components/error_modal.dart';
-import 'package:jarvis_project/screens/auth_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/user_model.dart';
@@ -35,10 +34,37 @@ class AccountPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SectionTitle(title: 'Profile'),
-            SettingsCard(
-                title: 'Username',
-                subtitle: User.username,
-                trailing: Container()),
+            Column(
+              children: [
+                Row(
+                  children: [
+                    const Text('Username',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(
+                      width: 8,
+                    ),
+                    Text(User.username)
+                  ],
+                ),
+                const SizedBox(
+                  height: 16,
+                ),
+                Row(
+                  children: [
+                    const Text('Remaining Usage',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(
+                      width: 8,
+                    ),
+                    Text(
+                        User.unlimited ? 'unlimited' : '${User.remainingUsage}')
+                  ],
+                )
+              ],
+            ),
+            const SizedBox(
+              height: 16,
+            ),
             SettingsCard(
               title: 'UID',
               subtitle: User.id,
@@ -63,41 +89,41 @@ class AccountPage extends StatelessWidget {
                   },
                   child: const Text('Copy')),
             ),
-            // Center(
-            //   child: Container(
-            //     margin: const EdgeInsets.symmetric(vertical: 8),
-            //     padding:
-            //         const EdgeInsets.symmetric(horizontal: 60, vertical: 24),
-            //     decoration: BoxDecoration(
-            //         borderRadius: BorderRadius.circular(12),
-            //         gradient: LinearGradient(colors: [
-            //           Colors.purple.shade100,
-            //           Colors.blue.shade100,
-            //           Colors.purple.shade100
-            //         ], begin: Alignment.bottomLeft, end: Alignment.topRight)),
-            //     child: Column(
-            //       children: [
-            //         const Text('Become Premium User'),
-            //         const SizedBox(
-            //           height: 8,
-            //         ),
-            //         ElevatedButton(
-            //             onPressed: () {
-            //               try {
-            //                 final url = Uri.parse(
-            //                     'https://admin.dev.jarvis.cx/pricing/overview');
-            //
-            //                 launchUrl(url,
-            //                     mode: LaunchMode.externalApplication);
-            //               } catch (e) {
-            //                 showErrorModal(context, e.toString());
-            //               }
-            //             },
-            //             child: const Text('Subscribe here'))
-            //       ],
-            //     ),
-            //   ),
-            // ),
+            Center(
+              child: Container(
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 60, vertical: 24),
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    gradient: LinearGradient(colors: [
+                      Colors.purple.shade100,
+                      Colors.blue.shade100,
+                      Colors.purple.shade100
+                    ], begin: Alignment.bottomLeft, end: Alignment.topRight)),
+                child: Column(
+                  children: [
+                    const Text('Become Premium User'),
+                    const SizedBox(
+                      height: 8,
+                    ),
+                    ElevatedButton(
+                        onPressed: () {
+                          try {
+                            final url = Uri.parse(
+                                'https://admin.dev.jarvis.cx/pricing/overview');
+
+                            launchUrl(url,
+                                mode: LaunchMode.externalApplication);
+                          } catch (e) {
+                            showErrorModal(context, e.toString());
+                          }
+                        },
+                        child: const Text('Subscribe here'))
+                  ],
+                ),
+              ),
+            ),
             Container(
               padding: const EdgeInsets.all(16),
               margin: const EdgeInsets.symmetric(vertical: 8),
