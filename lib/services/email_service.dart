@@ -1,62 +1,33 @@
 import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:jarvis_project/models/email_reply.dart';
+import 'package:jarvis_project/models/email_reply_response.dart';
+import 'package:jarvis_project/util/endpoints.dart';
+import 'package:jarvis_project/services/api_service.dart';
+import 'package:jarvis_project/models/user_model.dart';
 
-import 'api_service.dart';
-
-class EmailService {
-  Future<List<String>> getSuggestedReplies(String email, String subject) async {
+class MailService {
+  Future<EmailReplyResponse> generateResponseEmail(
+      EmailReply emailReply) async {
+    final url = '${ApiService.baseURL}${emailEndpoints['responseEmail']}';
     try {
-      Map<String, dynamic> body = {
-        "action": "Suggest 3 ideas for this email",
-        "email": email,
-        "metadata": {
-          "context": [],
-          "subject": subject,
-          "sender": "example@domain.com",
-          "receiver": "receiver@domain.com",
-          "language": "vietnamese"
-        }
-      };
-      final response = await apiService.suggestReplyIdeas(body);
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization':
+              'Bearer ${User.refreshToken}', // Đảm bảo token chính xác
+        },
+        body: json.encode(emailReply.toJson()),
+      );
+
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return List<String>.from(data['ideas']);
+        return EmailReplyResponse.fromJson(json.decode(response.body));
       } else {
-        throw Exception('Failed to fetch suggested replies');
+        throw Exception('Failed to generate response email: ${response.body}');
       }
     } catch (e) {
-      throw Exception('Error fetching suggested replies: $e');
-    }
-  }
-
-  Future<String> generateResponseEmail(
-      String mainIdea, String emailContent) async {
-    try {
-      Map<String, dynamic> body = {
-        "mainIdea": mainIdea,
-        "action": "Reply to this email",
-        "email": emailContent,
-        "metadata": {
-          "context": [],
-          "subject": "Email Subject",
-          "sender": "example@domain.com",
-          "receiver": "receiver@domain.com",
-          "style": {
-            "length": "long",
-            "formality": "neutral",
-            "tone": "friendly"
-          },
-          "language": "vietnamese"
-        }
-      };
-      final response = await apiService.responseEmail(body);
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return data['email'];
-      } else {
-        throw Exception('Failed to generate response email');
-      }
-    } catch (e) {
-      throw Exception('Error generating email: $e');
+      throw Exception('Error generating response email: $e');
     }
   }
 }
