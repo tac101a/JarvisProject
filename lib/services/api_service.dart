@@ -6,6 +6,7 @@ import 'package:jarvis_project/util/endpoints.dart';
 import 'package:mime/mime.dart';
 
 import '../models/user_model.dart';
+import '../models/email_reply.dart';
 
 final ApiService apiService = ApiService();
 
@@ -157,8 +158,8 @@ final class ApiService {
   }
 
   // load conversation
-  Future<http.Response> loadConversation(String id,
-      Map<String, String> param) async {
+  Future<http.Response> loadConversation(
+      String id, Map<String, String> param) async {
     // url
     var url = baseURL + chatEndpoints['getConversationHistory']!;
 
@@ -277,8 +278,8 @@ final class ApiService {
   }
 
   // update prompt
-  Future<http.Response> updatePrompt(String id,
-      Map<String, dynamic> data) async {
+  Future<http.Response> updatePrompt(
+      String id, Map<String, dynamic> data) async {
     // url
     var url = baseURL + promptEndpoints['updatePrompt']!;
 
@@ -375,8 +376,8 @@ final class ApiService {
   }
 
   // update assistant
-  Future<http.Response> updateAssistant(String id,
-      Map<String, dynamic> data) async {
+  Future<http.Response> updateAssistant(
+      String id, Map<String, dynamic> data) async {
     // url
     var url = kbURL + aiEndpoints['updateAssistant']!;
 
@@ -455,8 +456,8 @@ final class ApiService {
   }
 
   // ask assistant
-  Future<http.Response> askAssistant(String id,
-      Map<String, dynamic> data) async {
+  Future<http.Response> askAssistant(
+      String id, Map<String, dynamic> data) async {
     // url
     var url = kbURL + aiEndpoints['chat']!;
 
@@ -484,7 +485,7 @@ final class ApiService {
     // request
     try {
       final response =
-      await http.get(Uri.parse('$url$id/knowledges'), headers: {
+          await http.get(Uri.parse('$url$id/knowledges'), headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${User.kbAccessToken}'
       });
@@ -495,8 +496,8 @@ final class ApiService {
   }
 
   // add kb to assistant
-  Future<http.Response> addKnowledgeToAssistant(String botID,
-      String kbID) async {
+  Future<http.Response> addKnowledgeToAssistant(
+      String botID, String kbID) async {
     // url
     var url = kbURL + aiEndpoints['addKnowledgeToBot']!;
 
@@ -516,8 +517,8 @@ final class ApiService {
   }
 
   // delete kb from assistant
-  Future<http.Response> deleteKnowledgeFromAssistant(String botID,
-      String kbID) async {
+  Future<http.Response> deleteKnowledgeFromAssistant(
+      String botID, String kbID) async {
     // url
     var url = kbURL + aiEndpoints['removeKnowledgeFromBot']!;
 
@@ -596,8 +597,8 @@ final class ApiService {
   }
 
   // update knowledge
-  Future<http.Response> updateKnowledge(String id,
-      Map<String, dynamic> data) async {
+  Future<http.Response> updateKnowledge(
+      String id, Map<String, dynamic> data) async {
     // url
     var url = kbURL + kbEndpoints['updateKnowledge']!;
 
@@ -635,8 +636,8 @@ final class ApiService {
   }
 
   // add website
-  Future<http.Response> addWebsiteToKnowledge(String id,
-      Map<String, dynamic> data) async {
+  Future<http.Response> addWebsiteToKnowledge(
+      String id, Map<String, dynamic> data) async {
     // url
     var url = kbURL + kbEndpoints['addWebsite']!;
 
@@ -664,7 +665,7 @@ final class ApiService {
     // request
     try {
       var request =
-      http.MultipartRequest('POST', Uri.parse('$url$id/local-file'));
+          http.MultipartRequest('POST', Uri.parse('$url$id/local-file'));
 
       var fileBytes = await file.readAsBytes();
       var mimeType = lookupMimeType(file.path);
@@ -672,9 +673,7 @@ final class ApiService {
           mimeType?.split('/') ?? ['application', 'octet-stream'];
 
       var multipartFile = http.MultipartFile.fromBytes('file', fileBytes,
-          filename: file.path
-              .split('/')
-              .last,
+          filename: file.path.split('/').last,
           contentType: MediaType(mimeTypeSplit[0], mimeTypeSplit[1]));
       request.files.add(multipartFile);
       request.headers.addAll({
@@ -692,8 +691,8 @@ final class ApiService {
   }
 
   // add data from slack
-  Future<http.Response> addDataFromSlack(String id,
-      Map<String, dynamic> data) async {
+  Future<http.Response> addDataFromSlack(
+      String id, Map<String, dynamic> data) async {
     // url
     var url = kbURL + kbEndpoints['addSlack']!;
 
@@ -714,8 +713,8 @@ final class ApiService {
   }
 
   // add data from slack
-  Future<http.Response> addDataFromConfluence(String id,
-      Map<String, dynamic> data) async {
+  Future<http.Response> addDataFromConfluence(
+      String id, Map<String, dynamic> data) async {
     // url
     var url = kbURL + kbEndpoints['addConfluence']!;
 
@@ -735,7 +734,7 @@ final class ApiService {
     }
   }
 
-  Future<http.Response> responseEmail(Map<String, dynamic> body) async {
+  Future<http.Response> responseEmail(EmailReply emailReply) async {
     var url = baseURL + emailEndpoints['responseEmail']!;
     try {
       final response = await http.post(
@@ -745,7 +744,7 @@ final class ApiService {
           'Authorization': 'Bearer ${User.refreshToken}',
           'x-jarvis-guid': '' // Add valid GUID if required
         },
-        body: json.encode(body),
+        body: json.encode(emailReply.toJson()), // Chuyển đối tượng thành JSON
       );
       return response;
     } catch (e) {
@@ -754,14 +753,14 @@ final class ApiService {
   }
 
   Future<http.Response> suggestReplyIdeas(Map<String, dynamic> body) async {
-    var url = baseURL + emailEndpoints['suggestReply']!;
+    var url = baseURL + emailEndpoints['suggestReplyIdeas']!;
     try {
       final response = await http.post(
         Uri.parse(url),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${User.refreshToken}',
-          'x-jarvis-guid': '' // Add valid GUID if required
+          'x-jarvis-guid': ''
         },
         body: json.encode(body),
       );
