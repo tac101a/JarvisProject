@@ -226,7 +226,11 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                                   knowledge: kb);
                             });
                           },
-                        );
+                        ).then((result) {
+                          setState(() {
+                            uploadType = '';
+                          });
+                        });
                       },
                     ),
                     // delete button
@@ -313,7 +317,11 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                             knowledge: kb);
                       });
                     },
-                  );
+                  ).then((result) {
+                    setState(() {
+                      uploadType = '';
+                    });
+                  });
                 },
               );
             },
@@ -590,7 +598,8 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                 children: [
                   const Text(
                     'Name',
-                    style: TextStyle(fontSize: 12),
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.left,
                   ),
                   TextFormField(
                     style: const TextStyle(fontSize: 12, color: Colors.black),
@@ -608,7 +617,8 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                   const SizedBox(height: 8.0),
                   const Text(
                     'URL',
-                    style: TextStyle(fontSize: 12),
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.left,
                   ),
                   TextFormField(
                     style: const TextStyle(fontSize: 12, color: Colors.black),
@@ -638,7 +648,9 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                                   url: formData['url']!);
 
                           // close dialog
-                          Navigator.pop(context);
+                          if (Navigator.canPop(context)) {
+                            Navigator.pop(context);
+                          }
 
                           if (mounted) {
                             var snackbarText = '';
@@ -861,7 +873,9 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                                   username: formData['username']!);
 
                           // close dialog
-                          Navigator.pop(context);
+                          if (Navigator.canPop(context)) {
+                            Navigator.pop(context);
+                          }
 
                           if (mounted) {
                             var snackbarText = '';
@@ -889,164 +903,5 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
       default:
         return Container();
     }
-  }
-
-  // Show Upload Options Dialog
-  void _showUploadOptions(String knowledgeName) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Wrap(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.file_upload),
-              title: const Text('Upload from File'),
-              onTap: () {
-                Navigator.pop(context);
-                _uploadFromFile(knowledgeName);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.link),
-              title: const Text('Upload from URL'),
-              onTap: () {
-                Navigator.pop(context);
-                _uploadFromURL(knowledgeName);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.cloud_upload),
-              title: const Text('Upload from Google Drive'),
-              onTap: () {
-                Navigator.pop(context);
-                _uploadFromGoogleDrive(knowledgeName);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.chat),
-              title: const Text('Upload from Slack'),
-              onTap: () {
-                Navigator.pop(context);
-                _uploadFromSlack(knowledgeName);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.account_tree),
-              title: const Text('Upload from Confluence'),
-              onTap: () {
-                Navigator.pop(context);
-                _uploadFromConfluence(knowledgeName);
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // Placeholder methods for upload actions
-  void _uploadFromFile(String knowledgeName) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Upload from File to $knowledgeName'),
-          content:
-              const Text('File upload functionality is not yet implemented.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Close'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _uploadFromURL(String knowledgeName) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Upload from URL to $knowledgeName'),
-          content:
-              const Text('URL upload functionality is not yet implemented.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Close'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _uploadFromGoogleDrive(String knowledgeName) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Upload from Google Drive to $knowledgeName'),
-          content: const Text(
-              'Google Drive upload functionality is not yet implemented.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Close'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _uploadFromSlack(String knowledgeName) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Upload from Slack to $knowledgeName'),
-          content:
-              const Text('Slack upload functionality is not yet implemented.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Close'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _uploadFromConfluence(String knowledgeName) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Upload from Confluence to $knowledgeName'),
-          content: const Text(
-              'Confluence upload functionality is not yet implemented.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Close'),
-            ),
-          ],
-        );
-      },
-    );
   }
 }
