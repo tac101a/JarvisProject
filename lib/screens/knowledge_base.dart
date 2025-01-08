@@ -237,7 +237,7 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                             context: context,
                             builder: (context) {
                               return AlertDialog(
-                                title: dialogTitle('Delete Prompt',
+                                title: dialogTitle('Delete Knowledge Base',
                                     color: Colors.red),
                                 content: const Text(
                                   'Are you sure?',

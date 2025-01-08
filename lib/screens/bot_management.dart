@@ -303,7 +303,7 @@ class _BotManagementScreenState extends State<BotManagementScreen> {
                               context: context,
                               builder: (context) {
                                 return AlertDialog(
-                                  title: dialogTitle('Delete Prompt',
+                                  title: dialogTitle('Delete Bot',
                                       color: Colors.red),
                                   content: const Text(
                                     'Are you sure?',
