@@ -6,7 +6,7 @@
 - 20120515: Luân Mã Khương
 - 1712390: Nguyễn Trần Triệu Duy
 
-## Final Project: Bond AI Copilot
+## Final Project: : Luna - An AI Chatbot
 
 - Description: An AI-powered chatbot to assist users with various tasks.
 - Requirements: [Requirements Document](https://docs.google.com/document/d/1ualtUcG6kswL7nUqNQbl1z9Dnos_DvmC/view)
