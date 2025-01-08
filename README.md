@@ -1,16 +1,22 @@
-# jarvis_project
+# Advanced Mobile Programming
 
-A new Flutter project.
+## Team Members
 
-## Getting Started
+- 21120197: Cao Nguyễn Tuấn Anh
+- 20120515: Luân Mã Khương
+- 1712390: Nguyễn Trần Triệu Duy
 
-This project is a starting point for a Flutter application.
+## Final Project: Bond AI Copilot
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- Description: An AI-powered chatbot to assist users with various tasks.
+- Requirements: [Requirements Document](https://docs.google.com/document/d/1ualtUcG6kswL7nUqNQbl1z9Dnos_DvmC/view)
+- Milestones:
+  1. Mock-UI:
+     - [Mock-UI Demo](https://drive.google.com/drive/folders/1PqgBfzDceztNwFPsqBPN2TBk9QzkmZdT?usp=drive_link)
+     - [Git Branch Mock-UI](https://github.com/tac101a/JarvisProject/tree/mock-ui)
+  2. Basic features
+     - [Basic-Feature Demo](https://drive.google.com/drive/folders/10nvLiVCx11y_ECQJlhhYoh64gpaci6Vj?usp=drive_link)
+     - [Git Branch Basic-Feature](https://github.com/tac101a/JarvisProject/tree/basic-feature)
+  3. Advanced features
+     - [Advance-Feature Demo](https://drive.google.com/drive/folders/1yXFTevv07pWh4c4Szs3OfaB1SVkkzXGW?usp=drive_link)
+     - [Git Branch Advance-Feature](https://github.com/tac101a/JarvisProject/tree/advance-feature)
