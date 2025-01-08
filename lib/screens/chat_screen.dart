@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:jarvis_project/components/error_modal.dart';
 import 'package:jarvis_project/models/assistant_model.dart';
 import 'package:jarvis_project/models/conversation_model.dart';
@@ -24,6 +25,7 @@ class _ChatScreenState extends State<ChatScreen> {
   // service
   final ChatService _chatService = ChatService();
   final AssistantService _assistantService = AssistantService();
+  InterstitialAd? _interstitialAd;
 
   // state
   List<dynamic> conList = [];
@@ -43,9 +45,39 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isPromptOverlayVisible = false;
   final PromptService _promptService = PromptService();
 
+  void _loadAndShowInterstitialAd() {
+    InterstitialAd.load(
+      adUnitId: 'ca-app-pub-3940256099942544/1033173712',
+      // Ad Unit ID for test
+      request: const AdRequest(),
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (InterstitialAd ad) {
+          _interstitialAd = ad;
+          _interstitialAd!.fullScreenContentCallback =
+              FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (InterstitialAd ad) {
+              ad.dispose();
+            },
+            onAdFailedToShowFullScreenContent:
+                (InterstitialAd ad, AdError error) {
+              ad.dispose();
+            },
+          );
+
+          // load ads
+          _interstitialAd!.show();
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          print('Interstitial ad failed to load: $error');
+        },
+      ),
+    );
+  }
+
   @override
   void dispose() {
     super.dispose();
+    _interstitialAd?.dispose();
     _focusNode.dispose();
     _controller.dispose();
   }
@@ -53,6 +85,9 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+
+    _loadAndShowInterstitialAd();
+
     _fetchPrompts(); // Tải danh sách prompt
     _controller.text = widget.inputText;
 
