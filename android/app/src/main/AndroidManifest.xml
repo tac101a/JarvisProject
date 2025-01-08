@@ -30,6 +30,11 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-9591795728130344~2248486900" />
+
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
@@ -49,5 +54,7 @@
         </intent>
     </queries>
 
+    <uses-permission android:name="android.permission.READ_APP_SEARCH" />
+    <uses-permission android:name="android.permission.WRITE_APP_SEARCH" />
     <uses-permission android:name="android.permission.INTERNET" />
 </manifest>
