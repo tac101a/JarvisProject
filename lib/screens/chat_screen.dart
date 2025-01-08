@@ -170,15 +170,10 @@ class _ChatScreenState extends State<ChatScreen> {
     var content = _controller.text;
     if (content.isNotEmpty) {
       try {
-        int timestamp = DateTime
-            .now()
-            .millisecondsSinceEpoch;
+        int timestamp = DateTime.now().millisecondsSinceEpoch;
         setState(() {
           // remove textfield value
           _controller.text = '';
-
-          // switch to chat phase
-          _selectedConIndex = 0;
 
           // add message to message list
           messages.insert(0, Message('user', timestamp, content));
@@ -191,7 +186,7 @@ class _ChatScreenState extends State<ChatScreen> {
           if (User.remainingUsage > 0) {
             // if _selectedConIndex = -1 then create new conversation
             var conID =
-            _selectedConIndex != -1 ? conList[_selectedConIndex].id : '';
+                _selectedConIndex != -1 ? conList[_selectedConIndex].id : '';
 
             var response = await _chatService.sendMessage(
                 content, Assistant.currentBot.id, conID);
@@ -277,83 +272,73 @@ class _ChatScreenState extends State<ChatScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final RenderBox renderBox = context.findRenderObject() as RenderBox;
       final Offset textFieldOffset = renderBox.localToGlobal(Offset.zero);
-      final bottomInset = MediaQuery
-          .of(context)
-          .viewInsets
-          .bottom;
+      final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
       final overlay = Overlay.of(context);
 
       // Create OverlayEntry
       _overlayEntry = OverlayEntry(
-        builder: (context) =>
-            Positioned(
-              left: 16,
-              right: 16,
-              bottom: MediaQuery
-                  .of(context)
-                  .size
-                  .height -
-                  textFieldOffset.dy -
-                  renderBox.size.height -
-                  bottomInset +
-                  60,
-              child: Material(
-                elevation: 4,
-                borderRadius: BorderRadius.circular(8),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxHeight: 200, // Limit the height of the overlay
-                  ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+        builder: (context) => Positioned(
+          left: 16,
+          right: 16,
+          bottom: MediaQuery.of(context).size.height -
+              textFieldOffset.dy -
+              renderBox.size.height -
+              bottomInset +
+              60,
+          child: Material(
+            elevation: 4,
+            borderRadius: BorderRadius.circular(8),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxHeight: 200, // Limit the height of the overlay
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
                     ),
-                    child: Scrollbar(
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: filtered.length,
-                        itemBuilder: (context, index) {
-                          final prompt = filtered[index];
+                  ],
+                ),
+                child: Scrollbar(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      final prompt = filtered[index];
 
-                          // Ensure prompt fields are not null
-                          final title = prompt['title'] ?? 'Untitled';
-                          final description =
-                              prompt['description'] ??
-                                  'No description available';
-                          final content = prompt['content'] ?? '';
-                          return ListTile(
-                            title: Text(title),
-                            subtitle: Text(description),
-                            onTap: () {
-                              // Replace the current text with the prompt content
-                              _controller.text = _controller.text.replaceAll(
-                                RegExp(r'/\w*$'),
-                                content,
-                              );
-                              _controller.selection =
-                                  TextSelection.fromPosition(
-                                    TextPosition(
-                                        offset: _controller.text.length),
-                                  );
-                              _removePromptOverlay(); // Close the overlay
-                            },
+                      // Ensure prompt fields are not null
+                      final title = prompt['title'] ?? 'Untitled';
+                      final description =
+                          prompt['description'] ?? 'No description available';
+                      final content = prompt['content'] ?? '';
+                      return ListTile(
+                        title: Text(title),
+                        subtitle: Text(description),
+                        onTap: () {
+                          // Replace the current text with the prompt content
+                          _controller.text = _controller.text.replaceAll(
+                            RegExp(r'/\w*$'),
+                            content,
                           );
+                          _controller.selection = TextSelection.fromPosition(
+                            TextPosition(offset: _controller.text.length),
+                          );
+                          _removePromptOverlay(); // Close the overlay
                         },
-                      ),
-                    ),
+                      );
+                    },
                   ),
                 ),
               ),
             ),
+          ),
+        ),
       );
 
       overlay.insert(_overlayEntry!);
@@ -378,65 +363,62 @@ class _ChatScreenState extends State<ChatScreen> {
       drawer: Drawer(
         child: SafeArea(
             child: Column(
-              children: [
-                // New chat button above
-                Container(
-                    color: Colors.blue,
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'New Chat',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.add, color: Colors.white),
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            setState(() {
-                              _selectedConIndex = -1;
-                              messages.clear();
-                            });
-                          },
-                        ),
-                      ],
-                    )),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: conList.length,
-                    itemBuilder: (context, index) {
-                      final item = conList[index];
-                      final isSelected = index == _selectedConIndex;
-                      return ListTile(
-                        // set background color for selected item
-                        tileColor: isSelected
-                            ? Colors.blue.withOpacity(0.2)
-                            : null,
-                        title: Text(
-                            isBuiltinBot ? item.title : item.threadName),
-                        onTap: () async {
-                          Navigator.of(context).pop(); // close Drawer
-                          setState(() {
-                            _isLoading = true;
-                            _selectedConIndex = index;
-                          });
+          children: [
+            // New chat button above
+            Container(
+                color: Colors.blue,
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'New Chat',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.add, color: Colors.white),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        setState(() {
+                          _selectedConIndex = -1;
                           messages.clear();
-                          await _getMessages();
-                          setState(() {
-                            _isLoading = false;
-                          });
-                        },
-                      );
+                        });
+                      },
+                    ),
+                  ],
+                )),
+            Expanded(
+              child: ListView.builder(
+                itemCount: conList.length,
+                itemBuilder: (context, index) {
+                  final item = conList[index];
+                  final isSelected = index == _selectedConIndex;
+                  return ListTile(
+                    // set background color for selected item
+                    tileColor: isSelected ? Colors.blue.withOpacity(0.2) : null,
+                    title: Text(isBuiltinBot ? item.title : item.threadName),
+                    onTap: () async {
+                      Navigator.of(context).pop(); // close Drawer
+                      setState(() {
+                        _isLoading = true;
+                        _selectedConIndex = index;
+                      });
+                      messages.clear();
+                      await _getMessages();
+                      setState(() {
+                        _isLoading = false;
+                      });
                     },
-                  ),
-                )
-              ],
-            )),
+                  );
+                },
+              ),
+            )
+          ],
+        )),
       ),
       body: _buildBody(),
     );
@@ -450,7 +432,7 @@ class _ChatScreenState extends State<ChatScreen> {
       return Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          if (_selectedConIndex == -1)
+          if (_selectedConIndex == -1 && messages.isEmpty)
             Expanded(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -469,7 +451,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 ],
               ),
             ),
-          if (_selectedConIndex != -1)
+          if (_selectedConIndex != -1 || messages.isNotEmpty)
             Expanded(
               child: ListView.builder(
                 reverse: true,
@@ -486,10 +468,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     child: IntrinsicWidth(
                       child: Container(
                         constraints: BoxConstraints(
-                            maxWidth: MediaQuery
-                                .of(context)
-                                .size
-                                .width * 0.7),
+                            maxWidth: MediaQuery.of(context).size.width * 0.7),
                         decoration: BoxDecoration(
                             color: isUserMessage
                                 ? Colors.lightBlueAccent.withOpacity(0.2)
@@ -546,7 +525,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             Container(
                 padding:
-                const EdgeInsets.symmetric(horizontal: 12.0, vertical: 2.0),
+                    const EdgeInsets.symmetric(horizontal: 12.0, vertical: 2.0),
                 decoration: BoxDecoration(
                   border: _isTextInputFocus
                       ? Border.all(color: Colors.purple, width: 0.5)
